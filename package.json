@@ -1,0 +1,75 @@
+{
+  "name": "newapibar",
+  "version": "1.0.0",
+  "description": "跨平台桌面Widget - New API 面板模型用量实时监控",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "gen-icon": "python3 build/gen_icon.py",
+    "pack": "electron-builder --dir",
+    "build:mac": "electron-builder build --mac",
+    "build:win": "electron-builder build --win",
+    "build:linux": "electron-builder build --linux",
+    "build:all": "electron-builder build --mac --win --linux"
+  },
+  "keywords": [
+    "widget",
+    "electron",
+    "api-proxy",
+    "new-api",
+    "cross-platform"
+  ],
+  "author": "LeonYe612 <ylg5612@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.0"
+  },
+  "build": {
+    "appId": "io.github.leonye.newapibar",
+    "productName": "NewApiBar",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.html",
+      "node_modules/**/*",
+      "!node_modules/.cache/**"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "NewApiBar",
+      "iconSize": 80,
+      "window": { "width": 400, "height": 300 }
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development",
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Widget</title>
+<style>
+  :root {
+    --card-bg: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.06);
+    --text-primary: #EDEDF2;
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-faded: rgba(255,255,255,0.38);
+    --text-dim: rgba(255,255,255,0.25);
+    --divider: rgba(255,255,255,0.07);
+    --divider-strong: rgba(255,255,255,0.09);
+    --btn-bg: rgba(255,255,255,0.08);
+    --btn-color: rgba(255,255,255,0.50);
+    --btn-hover-bg: rgba(255,255,255,0.18);
+    --model-row-bg: rgba(255,255,255,0.03);
+    --model-row-hover: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.12);
+    --footer-border: rgba(255,255,255,0.07);
+    --modal-bg: rgba(28,28,40,0.97);
+    --accent: #6C9FFF;
+    --accent-dim: rgba(108,159,255,0.15);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  body.light {
+    --card-bg: rgba(0,0,0,0.04);
+    --card-border: rgba(0,0,0,0.06);
+    --text-primary: #1A1A1E;
+    --text-secondary: rgba(0,0,0,0.55);
+    --text-faded: rgba(0,0,0,0.42);
+    --text-dim: rgba(0,0,0,0.32);
+    --divider: rgba(0,0,0,0.07);
+    --divider-strong: rgba(0,0,0,0.10);
+    --btn-bg: rgba(0,0,0,0.06);
+    --btn-color: rgba(0,0,0,0.45);
+    --btn-hover-bg: rgba(0,0,0,0.12);
+    --model-row-bg: rgba(0,0,0,0.02);
+    --model-row-hover: rgba(0,0,0,0.06);
+    --border: rgba(0,0,0,0.12);
+    --footer-border: rgba(0,0,0,0.07);
+    --modal-bg: rgba(255,255,255,0.96);
+    --accent: #4A7AEA;
+    --accent-dim: rgba(74,122,234,0.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, 'PingFang SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    background: rgba(18,18,28,0.80);
+    backdrop-filter: blur(28px) saturate(1.3);
+    -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    color: var(--text-primary);
+    border-radius: 16px;
+    overflow: hidden;
+    user-select: none;
+    border: 0.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── 标题栏 ── */
+  .titlebar {
+    -webkit-app-region: drag;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 4px;
+    border-bottom: 0.5px solid var(--divider-strong);
+  }
+  .titlebar .title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+  }
+  .titlebar .controls {
+    -webkit-app-region: no-drag;
+    display: flex;
+    gap: 6px;
+  }
+  .btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--btn-bg);
+    color: var(--btn-color);
+    transition: all 0.18s ease;
+    line-height: 1;
+    position: relative;
+  }
+  .btn:hover { background: var(--btn-hover-bg); color: var(--text-primary); transform: scale(1.08); }
+  .btn.pin.active { background: var(--accent); color: #fff; }
+  .btn.close:hover { background: #FF5F57; color: #fff; }
+  .btn.refresh:hover { background: #28C840; color: #fff; }
+  .btn.refresh.spinning {
+    background: rgba(40, 200, 64, 0.25);
+    color: #28C840;
+    pointer-events: none;
+    animation: spinBtn 0.7s linear infinite;
+  }
+  @keyframes spinBtn { to { transform: rotate(360deg); } }
+  .btn.settings:hover { background: var(--accent); color: #fff; }
+
+  /* ── 核心指标区 ── */
+  .metrics {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px 4px;
+  }
+  .metric-card {
+    flex: 1;
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 8px 10px;
+    border: 0.5px solid var(--card-border);
+    transition: background 0.15s;
+  }
+  .metric-card:hover { background: var(--model-row-hover); }
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+  }
+  .metric-value.small { font-size: 15px; }
+
+  /* ── 分隔线 ── */
+  .divider {
+    height: 0.5px;
+    background: var(--divider);
+    margin: 6px 12px;
+  }
+
+  /* ── 模型列表 ── */
+  .section-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-faded);
+    letter-spacing: 0.3px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+  }
+
+  .model-list {
+    padding: 0 12px 6px;
+    overflow-y: auto;
+  }
+  .model-list::-webkit-scrollbar { width: 3px; }
+  .model-list::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.20); border-radius: 2px; }
+
+  .model-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 7px;
+    margin-bottom: 2px;
+    background: var(--model-row-bg);
+    transition: background 0.15s;
+  }
+  .model-row:hover { background: var(--model-row-hover); }
+  .model-rank {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-faded);
+    width: 16px;
+    flex-shrink: 0;
+  }
+  .model-rank.r1 { color: #FFD700; font-weight: 800; }
+  .model-rank.r2 { color: #C0C0C0; font-weight: 800; }
+  .model-rank.r3 { color: #CD7F32; font-weight: 800; }
+  body.light .model-rank.r3 { color: #B87333; }
+  .model-info { flex: 1; min-width: 0; }
+  .model-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .model-cost {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .model-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-dim);
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .model-bar .fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  /* ── 状态指示 ── */
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.ok   { background: #28C840; box-shadow: 0 0 6px #28C84088; }
+  .status-dot.warn { background: #FFBD2E; box-shadow: 0 0 6px #FFBD2E88; }
+  .status-dot.err  { background: #FF5F57; box-shadow: 0 0 6px #FF5F5788; }
+  .status-dot.unknown { background: rgba(128,128,128,0.30); }
+  .status-dot.pulsing { animation: pulseDot 1.2s ease-in-out infinite; }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.75); }
+  }
+
+  /* ── 加载 / 错误 ── */
+  .loading {
+    text-align: center;
+    padding: 18px 0;
+    color: var(--text-faded);
+    font-size: 12px;
+  }
+  .loading .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(128,128,128,0.12);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    background: rgba(255,95,87,0.10);
+    border: 0.5px solid rgba(255,95,87,0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #FF8A80;
+    margin: 8px 12px;
+    line-height: 1.5;
+  }
+
+  /* ── 设置弹窗 ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.50);
+    z-index: 100;
+    -webkit-app-region: no-drag;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-overlay.open { display: flex; align-items: center; justify-content: center; }
+  .modal {
+    background: var(--modal-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    width: 230px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.30);
+  }
+  body.light .modal { box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+  .modal h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+  .modal label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+  .modal input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 0.5px solid var(--card-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 12px;
+    outline: none;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal input::placeholder { color: var(--text-faded); }
+  .theme-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .theme-toggle button {
+    flex: 1;
+    padding: 5px;
+    border-radius: 6px;
+    border: 0.5px solid var(--card-border);
+    cursor: pointer;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--card-bg);
+    color: var(--text-faded);
+    transition: all 0.15s;
+  }
+  .theme-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .modal-btns {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .modal-btns button {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 10.5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-cancel {
+    background: var(--btn-bg);
+    color: var(--text-faded);
+  }
+  .btn-cancel:hover { background: var(--btn-hover-bg); }
+  .btn-save {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-save:hover { opacity: 0.88; }
+
+  .step-indicator {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--divider-strong);
+    transition: all 0.25s;
+  }
+  .step-dot.active { background: var(--accent); width: 22px; border-radius: 3px; }
+  .step-dot.done { background: var(--accent); opacity: 0.6; }
+
+  .domain-display {
+    font-size: 10.5px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    word-break: break-all;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  /* ── 底部状态栏 ── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 12px 8px;
+    border-top: 0.5px solid var(--footer-border);
+    font-size: 10.5px;
+    color: var(--text-faded);
+  }
+  .footer .updated { text-align: right; }
+</style>
+</head>
+<body>
+
+<!-- 标题栏 -->
+<div class="titlebar">
+  <span class="title">API PROXY</span>
+  <div class="controls">
+    <button class="btn pin" id="pinBtn" onclick="togglePin()" title="在所有桌面显示">📌</button>
+    <button class="btn settings" onclick="showSettings()" title="设置">⚙</button>
+    <button class="btn refresh" onclick="manualRefresh()" title="刷新">↻</button>
+    <button class="btn close" onclick="window.widgetAPI?.hide()" title="隐藏">−</button>
+  </div>
+</div>
+
+<!-- 核心指标 -->
+<div class="metrics">
+  <div class="metric-card">
+    <div class="metric-label">💰 余额</div>
+    <div class="metric-value" id="balanceVal">—</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">🔥 今日消耗</div>
+    <div class="metric-value small" id="todayCostVal">—</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 模型 Top5 -->
+<div class="section-label" id="modelSectionLabel">今日模型消耗 Top 5</div>
+<div class="model-list" id="modelList">
+  <div class="loading">
+    <div class="spinner"></div>
+    正在连接…
+  </div>
+</div>
+
+<div class="error-msg" id="errorBox" style="display:none;"></div>
+
+<!-- 底部状态 -->
+<div class="footer">
+  <span id="statusText"><span class="status-dot unknown"></span> 等待中</span>
+  <span class="updated" id="updatedText">—</span>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" id="modalContent">
+    <!-- 第一步：域名输入 -->
+    <div id="domainStep">
+      <h3>🔗 第一步：API 地址</h3>
+      <label>New API 网站域名</label>
+      <input type="url" id="domainInput" placeholder="https://api-proxy.example.com" />
+      <div class="error-msg" id="domainError" style="display:none;margin:0 0 8px;"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="hideSettings()">取消</button>
+        <button class="btn-save" onclick="saveDomainAndNext()">下一步</button>
+      </div>
+    </div>
+
+    <!-- 第二步：账号密码 -->
+    <div id="loginStep" style="display:none;">
+      <div class="step-indicator">
+        <span class="step-dot done" id="stepDot1"></span>
+        <span class="step-dot active" id="stepDot2"></span>
+      </div>
+      <h3>🔑 第二步：登录</h3>
+      <div class="domain-display" id="domainDisplay"></div>
+      <label>用户名</label>
+      <input type="text" id="usernameInput" placeholder="请输入用户名" />
+      <label>密码</label>
+      <input type="password" id="passwordInput" placeholder="请输入密码" />
+      <div class="error-msg" id="loginError" style="display:none;margin:0 0 8px;"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="goToDomainStep()">上一步</button>
+        <button class="btn-save" onclick="doLogin()">登录</button>
+      </div>
+    </div>
+
+    <!-- 已登录：设置页面 -->
+    <div id="loggedIn" style="display:none;">
+      <h3>⚙ 设置</h3>
+      <div class="domain-display" id="loggedDomain" style="margin-bottom:10px;"></div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+        已登录：<span id="loggedUser" style="color:var(--accent);font-weight:600;"></span>
+      </div>
+      <label>主题</label>
+      <div class="theme-toggle">
+        <button id="themeDark" onclick="setTheme('dark')">🌙 深色</button>
+        <button id="themeLight" onclick="setTheme('light')">☀️ 浅色</button>
+      </div>
+      <label>更新频率（分钟）</label>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="range" id="intervalSlider" min="1" max="60" value="1" oninput="document.getElementById('intervalVal').textContent=this.value" style="flex:1;accent-color:var(--accent);height:14px;" />
+        <span id="intervalVal" style="font-size:11px;color:var(--text-primary);min-width:22px;text-align:right;font-weight:600;">1</span>
+      </div>
+      <label>透明度</label>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="range" id="opacitySlider" min="10" max="60" value="20" oninput="applyOpacity(this.value);document.getElementById('opacityVal').textContent=this.value+'%';saveOpacity(this.value)" style="flex:1;accent-color:var(--accent);height:14px;" />
+        <span id="opacityVal" style="font-size:11px;color:var(--text-primary);min-width:28px;text-align:right;font-weight:600;">20%</span>
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="hideSettings()">关闭</button>
+        <button class="btn-save" style="background:#FF5F57;" onclick="doLogout()">退出登录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentData = null
+  let pinned = true
+  let currentOpacity = 20
+  let currentDomain = ''
+
+  const QUOTA_PER_YUAN = 500000
+
+  function normalizeDomain(raw) {
+    let u = raw.trim()
+    if (!u) return ''
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u
+    if (u.endsWith('/')) u = u.slice(0, -1)
+    return u
+  }
+
+  /* ── 工具 ──────────────────────────────── */
+  function extractBalance(data) {
+    if (!data || !data.ok) return null
+    const d = data.data ?? null
+    if (!d) return null
+    const root = d.data ?? d
+    const quota = root.quota ?? root.balance ?? root.credit
+    if (quota != null) return parseFloat(quota) / QUOTA_PER_YUAN
+    return null
+  }
+
+  function extractTodayUsage(logsData) {
+    if (!logsData || !logsData.ok) return null
+    const d = logsData.data ?? null
+    if (!d) return null
+    const items = d.data?.items ?? []
+    if (!Array.isArray(items) || items.length === 0) return null
+    let totalQuota = 0, totalTokens = 0
+    for (const entry of items) {
+      totalQuota += (entry.quota || 0)
+      totalTokens += ((entry.prompt_tokens || 0) + (entry.completion_tokens || 0))
+    }
+    if (totalQuota === 0) return null
+    return { cost: totalQuota / QUOTA_PER_YUAN, tokens: totalTokens }
+  }
+
+  function extractModelRanking(logsData) {
+    if (!logsData || !logsData.ok) return null
+    const d = logsData.data ?? null
+    if (!d) return null
+    const items = d.data?.items ?? []
+    if (!Array.isArray(items) || items.length === 0) return null
+    const modelMap = {}
+    for (const entry of items) {
+      const name = entry.model_name ?? entry.model ?? 'unknown'
+      if (!modelMap[name]) modelMap[name] = { name, quota: 0, tokens: 0 }
+      modelMap[name].quota += (entry.quota || 0)
+      modelMap[name].tokens += ((entry.prompt_tokens || 0) + (entry.completion_tokens || 0))
+    }
+    return Object.values(modelMap)
+      .map(m => ({ name: m.name, todayCost: m.quota / QUOTA_PER_YUAN, todayTokens: m.tokens }))
+      .sort((a, b) => b.todayCost - a.todayCost)
+      .slice(0, 5)
+  }
+
+  /* ── 渲染 ────────────────────────────── */
+  function renderMetrics(balance, todayUsage) {
+    document.getElementById('balanceVal').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
+    document.getElementById('todayCostVal').textContent = todayUsage ? '¥' + todayUsage.cost.toFixed(2) : '—'
+  }
+
+  function renderModelList(models) {
+    const list = document.getElementById('modelList')
+    if (!models || models.length === 0) {
+      list.innerHTML = '<div class="loading" style="padding:14px 0;font-size:12px;">暂无模型用量数据</div>'
+      return
+    }
+    const maxCost = models[0]?.todayCost || 1
+    list.innerHTML = models.map((m, i) => {
+      const rankClass = i < 3 ? ` r${i + 1}` : ''
+      const barWidth = maxCost > 0 ? (m.todayCost / maxCost * 100) : 0
+      return `
+        <div class="model-row">
+          <span class="model-rank${rankClass}">${i + 1}</span>
+          <div class="model-info">
+            <div class="model-name">${m.name}</div>
+            <div class="model-bar"><div class="fill" style="width:${barWidth}%"></div></div>
+          </div>
+          <span class="model-cost">¥${m.todayCost.toFixed(2)}</span>
+        </div>`
+    }).join('')
+  }
+
+  function render(result) {
+    const errBox = document.getElementById('errorBox')
+    errBox.style.display = 'none'
+
+    if (result?.expired || result?.error) {
+      showError(result.error || '登录已过期')
+      document.getElementById('statusText').innerHTML =
+        '<span class="status-dot err"></span> 需重新登录'
+      return
+    }
+
+    if (!result || !result.ok) {
+      if (result?.error) showError(result.error)
+      return
+    }
+
+    const { userInfo, logs, tokens } = result
+    const balance = extractBalance(userInfo) ?? extractBalance(tokens)
+    const todayUsage = extractTodayUsage(logs)
+    const models = extractModelRanking(logs) ?? []
+
+    renderMetrics(balance, todayUsage)
+    renderModelList(models)
+
+    const hasData = balance != null || todayUsage != null || models.length > 0
+    document.getElementById('statusText').innerHTML =
+      `<span class="status-dot ${hasData ? 'ok' : 'warn'}"></span> ${hasData ? '已连接' : '数据异常'}`
+    document.getElementById('updatedText').textContent =
+      '更新于 ' + new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+
+    if (!hasData) {
+      errBox.textContent = '暂无数据，请刷新重试'
+      errBox.style.background = 'rgba(255,189,46,0.10)'
+      errBox.style.borderColor = 'rgba(255,189,46,0.25)'
+      errBox.style.color = '#FFD54F'
+      errBox.style.display = 'block'
+    }
+  }
+
+  function showError(msg) {
+    const errBox = document.getElementById('errorBox')
+    errBox.textContent = msg
+    errBox.style.display = 'block'
+    document.getElementById('statusText').innerHTML =
+      '<span class="status-dot err"></span> 连接失败'
+  }
+
+  /* ── 刷新 ────────────────────────────── */
+  let isRefreshing = false
+  let lastGoodData = null
+
+  // 手动刷新：旋转按钮 + 脉动状态点，保留旧数据
+  async function manualRefresh() {
+    if (isRefreshing) return
+    isRefreshing = true
+
+    const btn = document.querySelector('.btn.refresh')
+    btn?.classList.add('spinning')
+    document.getElementById('statusText').innerHTML =
+      '<span class="status-dot pulsing"></span> 刷新中…'
+
+    const result = await window.widgetAPI?.fetchData()
+    if (result) {
+      currentData = result
+      if (!result.expired && !result.error) lastGoodData = result
+      render(result)
+    }
+
+    isRefreshing = false
+    btn?.classList.remove('spinning')
+  }
+
+  // 自动刷新（定时器 / 托盘菜单）：静默更新
+  async function autoRefresh() {
+    if (isRefreshing) return
+    isRefreshing = true
+    try {
+      const result = await window.widgetAPI?.fetchData()
+      if (result && !result.expired && !result.error) {
+        currentData = result
+        lastGoodData = result
+        render(result)
+      }
+    } catch {} // 静默
+    isRefreshing = false
+  }
+
+  /* ── 两步骤登录流程 ───────────────────── */
+  async function showSettings() {
+    const cfg = await window.widgetAPI?.loadConfig()
+    currentDomain = cfg?.apiBase || ''
+
+    if (cfg?.hasAuth) {
+      // 已登录 → 显示设置
+      showLoggedInView(cfg)
+    } else if (currentDomain) {
+      // 有域名，未登录 → 直接到账号密码那步
+      showLoginStep(currentDomain)
+    } else {
+      // 无域名 → 从域名输入开始
+      showDomainStep()
+    }
+    document.getElementById('settingsModal').classList.add('open')
+  }
+
+  function showDomainStep() {
+    document.getElementById('domainStep').style.display = 'block'
+    document.getElementById('loginStep').style.display = 'none'
+    document.getElementById('loggedIn').style.display = 'none'
+    document.getElementById('domainError').style.display = 'none'
+    document.getElementById('domainInput').value = currentDomain || ''
+    setTimeout(() => document.getElementById('domainInput')?.focus(), 150)
+  }
+
+  function showLoginStep(domain) {
+    document.getElementById('domainStep').style.display = 'none'
+    document.getElementById('loginStep').style.display = 'block'
+    document.getElementById('loggedIn').style.display = 'none'
+    document.getElementById('loginError').style.display = 'none'
+    document.getElementById('domainDisplay').textContent = '🔗 ' + domain
+    document.getElementById('usernameInput').value = ''
+    document.getElementById('passwordInput').value = ''
+    document.getElementById('stepDot1').classList.add('done')
+    document.getElementById('stepDot2').classList.add('active')
+    setTimeout(() => document.getElementById('usernameInput')?.focus(), 150)
+  }
+
+  function showLoggedInView(cfg) {
+    document.getElementById('domainStep').style.display = 'none'
+    document.getElementById('loginStep').style.display = 'none'
+    document.getElementById('loggedIn').style.display = 'block'
+    document.getElementById('loggedUser').textContent = cfg.username || '已登录'
+    document.getElementById('loggedDomain').textContent = '🔗 ' + (cfg.apiBase || '未设置')
+    document.getElementById('intervalSlider').value = cfg.interval || 1
+    document.getElementById('intervalVal').textContent = cfg.interval || 1
+    const t = cfg.theme || 'dark'
+    document.getElementById('themeDark').classList.toggle('active', t === 'dark')
+    document.getElementById('themeLight').classList.toggle('active', t === 'light')
+    const op = cfg.opacity || 20
+    document.getElementById('opacitySlider').value = op
+    document.getElementById('opacityVal').textContent = op + '%'
+  }
+
+  function goToDomainStep() {
+    showDomainStep()
+  }
+
+  async function saveDomainAndNext() {
+    const raw = document.getElementById('domainInput').value
+    const domain = normalizeDomain(raw)
+    if (!domain) {
+      const err = document.getElementById('domainError')
+      err.textContent = '请输入有效的域名（如 https://api-proxy.example.com）'
+      err.style.display = 'block'
+      return
+    }
+    document.getElementById('domainError').style.display = 'none'
+    currentDomain = domain
+
+    // 保存域名
+    await window.widgetAPI?.saveDomain({ domain })
+
+    // 进入第二步
+    showLoginStep(domain)
+  }
+
+  function hideSettings() {
+    document.getElementById('settingsModal').classList.remove('open')
+    const slider = document.getElementById('intervalSlider')
+    if (slider) window.widgetAPI?.setRefreshInterval(parseInt(slider.value))
+    const opSlider = document.getElementById('opacitySlider')
+    if (opSlider) saveOpacity(opSlider.value)
+  }
+
+  async function doLogin() {
+    const username = document.getElementById('usernameInput').value.trim()
+    const password = document.getElementById('passwordInput').value
+    const errEl = document.getElementById('loginError')
+    if (!username || !password) {
+      errEl.textContent = '请输入用户名和密码'
+      errEl.style.display = 'block'
+      return
+    }
+    if (!currentDomain) {
+      errEl.textContent = '请先输入 API 域名'
+      errEl.style.display = 'block'
+      return
+    }
+    const result = await window.widgetAPI?.doLogin({ domain: currentDomain, username, password })
+    if (result?.ok) {
+      hideSettings()
+      manualRefresh()
+    } else {
+      errEl.textContent = result?.error || '登录失败，请检查用户名和密码'
+      errEl.style.display = 'block'
+    }
+  }
+
+  async function doLogout() {
+    await window.widgetAPI?.logout()
+    hideSettings()
+    document.getElementById('balanceVal').textContent = '—'
+    document.getElementById('todayCostVal').textContent = '—'
+    document.getElementById('modelList').innerHTML = '<div class="loading" style="padding:14px 0;">请先登录</div>'
+    document.getElementById('statusText').innerHTML = '<span class="status-dot unknown"></span> 未登录'
+    setTimeout(showSettings, 300)
+  }
+
+  /* ── 置顶 ────────────────────────────── */
+  function togglePin() {
+    pinned = !pinned
+    window.widgetAPI?.setPin(pinned)
+    const btn = document.getElementById('pinBtn')
+    if (pinned) { btn.classList.add('active'); btn.title = '在所有桌面显示' }
+    else        { btn.classList.remove('active'); btn.title = '仅当前桌面' }
+  }
+
+  /* ── 主题 ────────────────────────────── */
+  function setTheme(theme) {
+    document.body.classList.toggle('light', theme === 'light')
+    try {
+      document.getElementById('themeDark').classList.toggle('active', theme === 'dark')
+      document.getElementById('themeLight').classList.toggle('active', theme === 'light')
+    } catch {}
+    window.widgetAPI?.saveTheme(theme)
+    applyOpacity(currentOpacity)
+  }
+
+  /* ── 透明度 ───────────────────────────── */
+  function applyOpacity(value) {
+    currentOpacity = parseInt(value)
+    const alpha = 1 - currentOpacity / 100
+    const isLight = document.body.classList.contains('light')
+    document.body.style.background = isLight
+      ? `rgba(255,255,255,${alpha.toFixed(2)})`
+      : `rgba(18,18,28,${alpha.toFixed(2)})`
+  }
+
+  function saveOpacity(value) {
+    try { window.widgetAPI?.saveOpacity(parseInt(value)) } catch {}
+  }
+
+  // 回车键触发登录 / 域名确认
+  document.getElementById('passwordInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin()
+  })
+  document.getElementById('domainInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveDomainAndNext()
+  })
+  document.getElementById('usernameInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('passwordInput')?.focus()
+  })
+
+  // 点击遮罩关闭
+  document.getElementById('settingsModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) hideSettings()
+  })
+
+  /* ── 事件绑定 ────────────────────────── */
+  window.addEventListener('widget-refresh', autoRefresh)
+  window.addEventListener('widget-show-settings', showSettings)
+
+  // 首次加载
+  ;(async () => {
+    const cfg = await window.widgetAPI?.loadConfig()
+    currentDomain = cfg?.apiBase || ''
+    document.getElementById('pinBtn').classList.add('active')
+    if (cfg?.theme === 'light') setTheme('light')
+    else { try { document.getElementById('themeDark').classList.add('active') } catch {} }
+    applyOpacity(cfg?.opacity || 20)
+    if (cfg?.hasAuth) {
+      manualRefresh()
+    } else {
+      setTimeout(showSettings, 300)
+    }
+  })()
+</script>
+</body>
+</html>

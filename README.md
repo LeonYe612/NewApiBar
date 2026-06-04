@@ -4,7 +4,9 @@
 
 支持 macOS / Windows / Linux。
 
-![screenshot]()
+<p align="center">
+  <img src="screenshots/dashboard.png" alt="NewApiBar Dashboard" width="360">
+</p>
 
 ## 功能
 
@@ -20,11 +22,13 @@
 
 ## 截图
 
-*（待补充）*
+| 登录 | 仪表盘 |
+|------|--------|
+| <img src="screenshots/login.png" alt="登录" width="280"> | <img src="screenshots/dashboard.png" alt="仪表盘" width="280"> |
 
 ## 下载
 
-在 [Releases](https://github.com/YOUR_USER/NewApiBar/releases) 页面下载对应平台的安装包：
+在 [Releases](https://github.com/LeonYe612/NewApiBar/releases) 页面下载对应平台的安装包：
 
 | 平台 | 格式 | 说明 |
 |------|------|------|
@@ -66,7 +70,7 @@ sudo xattr -cr /path/to/NewApiBar.app
 ### 安装
 
 ```bash
-git clone https://github.com/YOUR_USER/NewApiBar.git
+git clone https://github.com/LeonYe612/NewApiBar.git
 cd NewApiBar
 npm install
 ```
@@ -134,6 +138,9 @@ NewApiBar/
 │   ├── icon.png     # 应用图标（512×512）
 │   ├── icon.icns    # macOS 图标
 │   └── gen_icon.py  # 图标生成脚本
+├── screenshots/         # 截图
+│   ├── login.png
+│   └── dashboard.png
 ├── package.json
 ├── start.sh         # 快捷启动脚本（开发用）
 └── README.md

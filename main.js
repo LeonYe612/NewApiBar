@@ -244,7 +244,7 @@ function createWindow() {
     win.show()
     // 构造函数 visibleOnAllWorkspaces/alwaysOnTop 在部分 macOS 版本不生效，需显式调用
     win.setVisibleOnAllWorkspaces(true)
-    win.setAlwaysOnTop(true)
+    win.setAlwaysOnTop(true, 'floating')
   })
   win.on('closed', () => { win = null })
 }
@@ -299,9 +299,9 @@ function showTrayPopup() {
       }
       menuItems.push({ label: '今日消耗  ¥' + (totalQuota / 500000).toFixed(2), enabled: false })
       menuItems.push({ type: 'separator' })
-      const top3 = Object.entries(models).sort((a, b) => b[1] - a[1]).slice(0, 3)
-      for (let i = 0; i < top3.length; i++) {
-        menuItems.push({ label: `${i + 1}. ${top3[i][0].substring(0, 20)}  ¥${(top3[i][1] / 500000).toFixed(2)}`, enabled: false })
+      const top5 = Object.entries(models).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      for (let i = 0; i < top5.length; i++) {
+        menuItems.push({ label: `${i + 1}. ${top5[i][0].substring(0, 20)}  ¥${(top5[i][1] / 500000).toFixed(2)}`, enabled: false })
       }
     }
   } else {
@@ -340,7 +340,7 @@ function createTray() {
 function startAutoRefresh() {
   clearInterval(refreshTimer)
   const cfg = loadConfig()
-  const min = Math.max(1, Math.min(60, parseInt(cfg.interval) || 1))
+  const min = Math.max(1, Math.min(30, parseInt(cfg.interval) || 1))
   refreshTimer = setInterval(() => {
     if (win) win.webContents.send('widget-refresh')
   }, min * 60000)
@@ -398,7 +398,7 @@ ipcMain.handle('load-config', async () => {
 
 ipcMain.handle('set-refresh-interval', async (_, min) => {
   const cfg = loadConfig()
-  cfg.interval = Math.max(1, Math.min(60, parseInt(min) || 1))
+  cfg.interval = Math.max(1, Math.min(30, parseInt(min) || 1))
   saveConfig(cfg)
   startAutoRefresh()
   return { ok: true }
@@ -421,7 +421,9 @@ ipcMain.on('widget-show', () => { if (win) win.show() })
 ipcMain.handle('set-pin', (_, pinned) => {
   if (win) {
     win.setVisibleOnAllWorkspaces(pinned)
-    win.setAlwaysOnTop(pinned)
+    // macOS 需要指定 mode 才能正确置顶
+    win.setAlwaysOnTop(pinned, 'floating')
+    debugLog(`set-pin: ${pinned}`)
   }
   return { ok: true }
 })

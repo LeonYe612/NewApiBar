@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewApiBar — 页面设计系统</title>
+<style>
+  :root {
+    --bg: #0D0D14;
+    --bg-elevated: #151520;
+    --bg-card: #1C1C2A;
+    --text-primary: #EDEDF2;
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-faded: rgba(255,255,255,0.38);
+    --accent: #6C9FFF;
+    --accent-dim: rgba(108,159,255,0.15);
+    --border: rgba(255,255,255,0.08);
+    --ok: #28C840;
+    --warn: #FFBD2E;
+    --err: #FF5F57;
+    --gold: #FFD700;
+    --silver: #C0C0C0;
+    --bronze: #CD7F32;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 40px 24px;
+  }
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14px; font-weight: 600; color: var(--text-faded); margin: 24px 0 12px; }
+
+  /* Design tokens */
+  .tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .token { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .token-swatch { width: 100%; height: 36px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.06); }
+  .token-name { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+  .token-val { font-size: 10px; color: var(--text-faded); font-family: 'SF Mono', monospace; }
+
+  /* Screens grid */
+  .screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 32px; }
+  .screen-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .screen-label { font-size: 13px; font-weight: 700; margin-bottom: 16px; color: var(--text-secondary); }
+  .screen-label span { color: var(--text-faded); font-weight: 500; margin-left: 6px; }
+
+  /* Mockup widget container */
+  .widget-mockup {
+    width: 260px; margin: 0 auto;
+    border-radius: 16px; overflow: hidden;
+    border: 0.5px solid rgba(255,255,255,0.12);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    font-size: 12px;
+    user-select: none;
+  }
+  .widget-mockup.light-theme {
+    border-color: rgba(0,0,0,0.10);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  /* ── Shared widget styles ── */
+  .wm-body {
+    background: rgba(18,18,28,0.80);
+    backdrop-filter: blur(28px) saturate(1.3);
+    -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    color: #EDEDF2;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 0.5px solid rgba(255,255,255,0.12);
+    font-family: -apple-system, 'PingFang SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  }
+  .wm-body.light {
+    background: rgba(250,250,252,0.88);
+    color: #1A1A1E;
+    border-color: rgba(0,0,0,0.10);
+  }
+
+  /* Titlebar */
+  .wm-titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 4px;
+    border-bottom: 0.5px solid rgba(255,255,255,0.09);
+  }
+  .wm-body.light .wm-titlebar { border-color: rgba(0,0,0,0.10); }
+  .wm-title { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: 0.5px; }
+  .wm-body.light .wm-title { color: rgba(0,0,0,0.55); }
+  .wm-controls { display: flex; gap: 6px; }
+  .wm-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.50);
+    font-size: 11px; cursor: pointer; line-height: 1;
+  }
+  .wm-body.light .wm-btn { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.45); }
+
+  /* Metrics */
+  .wm-metrics { display: flex; gap: 8px; padding: 10px 12px 4px; }
+  .wm-mcard { flex:1; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 10px; border: 0.5px solid rgba(255,255,255,0.06); }
+  .wm-body.light .wm-mcard { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); }
+  .wm-mlabel { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.2px; }
+  .wm-body.light .wm-mlabel { color: rgba(0,0,0,0.55); }
+  .wm-mval { font-size: 18px; font-weight: 700; color: #EDEDF2; font-variant-numeric: tabular-nums; letter-spacing: -0.3px; }
+  .wm-body.light .wm-mval { color: #1A1A1E; }
+  .wm-mval.s { font-size: 15px; }
+
+  /* Divider */
+  .wm-divider { height: 0.5px; background: rgba(255,255,255,0.07); margin: 6px 12px; }
+  .wm-body.light .wm-divider { background: rgba(0,0,0,0.07); }
+
+  /* Section */
+  .wm-slabel { font-size: 10.5px; font-weight: 600; color: rgba(255,255,255,0.38); letter-spacing: 0.3px; padding: 0 12px; margin-bottom: 4px; }
+  .wm-body.light .wm-slabel { color: rgba(0,0,0,0.42); }
+
+  /* Model list */
+  .wm-mlist { padding: 0 12px 6px; }
+  .wm-mrow { display: flex; align-items: center; padding: 5px 8px; border-radius: 7px; margin-bottom: 2px; background: rgba(255,255,255,0.03); }
+  .wm-body.light .wm-mrow { background: rgba(0,0,0,0.02); }
+  .wm-rank { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.38); width: 16px; flex-shrink: 0; }
+  .wm-body.light .wm-rank { color: rgba(0,0,0,0.42); }
+  .wm-rank.gold { color: #FFD700; font-weight: 800; }
+  .wm-rank.silver { color: #C0C0C0; font-weight: 800; }
+  .wm-rank.bronze { color: #CD7F32; font-weight: 800; }
+  .wm-minfo { flex:1; min-width: 0; }
+  .wm-mname { font-size: 12.5px; font-weight: 600; color: #EDEDF2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wm-body.light .wm-mname { color: #1A1A1E; }
+  .wm-mcost { font-size: 12px; font-weight: 700; color: #6C9FFF; font-variant-numeric: tabular-nums; flex-shrink: 0; margin-left: 8px; }
+  .wm-body.light .wm-mcost { color: #4A7AEA; }
+  .wm-mbar { height: 3px; border-radius: 2px; background: rgba(108,159,255,0.15); margin-top: 5px; overflow: hidden; }
+  .wm-body.light .wm-mbar { background: rgba(74,122,234,0.12); }
+  .wm-mbar .fill { height: 100%; border-radius: 2px; background: #6C9FFF; }
+  .wm-body.light .wm-mbar .fill { background: #4A7AEA; }
+
+  /* Footer */
+  .wm-footer { display: flex; align-items: center; justify-content: space-between; padding: 5px 12px 8px; border-top: 0.5px solid rgba(255,255,255,0.07); font-size: 10.5px; color: rgba(255,255,255,0.38); }
+  .wm-body.light .wm-footer { border-color: rgba(0,0,0,0.07); color: rgba(0,0,0,0.42); }
+  .wm-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #28C840; box-shadow: 0 0 6px #28C84088; margin-right: 4px; }
+  .wm-dot.warn { background: #FFBD2E; box-shadow: 0 0 6px #FFBD2E88; }
+  .wm-dot.err { background: #FF5F57; box-shadow: 0 0 6px #FF5F5788; }
+
+  /* Modal */
+  .wm-modal { background: rgba(28,28,40,0.97); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 14px; }
+  .wm-body.light .wm-modal { background: rgba(255,255,255,0.96); border-color: rgba(0,0,0,0.12); }
+  .wm-modal h3 { font-size: 13px; font-weight: 700; color: #EDEDF2; margin-bottom: 10px; }
+  .wm-body.light .wm-modal h3 { color: #1A1A1E; }
+  .wm-modal label { font-size: 11px; color: rgba(255,255,255,0.55); display: block; margin-bottom: 3px; font-weight: 500; }
+  .wm-body.light .wm-modal label { color: rgba(0,0,0,0.55); }
+  .wm-input { width: 100%; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; color: #EDEDF2; font-size: 12px; margin-bottom: 8px; }
+  .wm-body.light .wm-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); color: #1A1A1E; }
+  .wm-step { display: flex; gap: 4px; margin-bottom: 10px; justify-content: center; }
+  .wm-sdot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.09); }
+  .wm-body.light .wm-sdot { background: rgba(0,0,0,0.10); }
+  .wm-sdot.active { background: #6C9FFF; width: 22px; border-radius: 3px; }
+  .wm-body.light .wm-sdot.active { background: #4A7AEA; }
+  .wm-sdot.done { background: #6C9FFF; opacity: 0.6; }
+  .wm-body.light .wm-sdot.done { background: #4A7AEA; }
+  .wm-domain { font-size: 10.5px; color: #6C9FFF; background: rgba(108,159,255,0.15); padding: 4px 8px; border-radius: 6px; margin-bottom: 10px; word-break: break-all; line-height: 1.5; font-weight: 500; }
+  .wm-body.light .wm-domain { color: #4A7AEA; background: rgba(74,122,234,0.12); }
+  .wm-theme { display: flex; gap: 6px; margin-bottom: 10px; }
+  .wm-theme-btn { flex:1; padding: 5px; border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.06); font-size: 10.5px; font-weight: 600; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.38); text-align: center; }
+  .wm-body.light .wm-theme-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); color: rgba(0,0,0,0.42); }
+  .wm-theme-btn.active { background: #6C9FFF; color: #fff; border-color: #6C9FFF; }
+  .wm-body.light .wm-theme-btn.active { background: #4A7AEA; border-color: #4A7AEA; }
+  .wm-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+  .wm-btns button { padding: 5px 12px; border-radius: 6px; border: none; font-size: 10.5px; font-weight: 600; }
+  .wm-btn-s { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.38); }
+  .wm-body.light .wm-btn-s { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.42); }
+  .wm-btn-p { background: #6C9FFF; color: #fff; }
+  .wm-body.light .wm-btn-p { background: #4A7AEA; }
+  .wm-btn-d { background: #FF5F57; color: #fff; }
+
+  /* Loading */
+  .wm-loading { text-align: center; padding: 18px 0; color: rgba(255,255,255,0.38); font-size: 12px; }
+  .wm-body.light .wm-loading { color: rgba(0,0,0,0.42); }
+  .wm-spinner { width: 18px; height: 18px; border: 2px solid rgba(128,128,128,0.12); border-top-color: #6C9FFF; border-radius: 50%; margin: 0 auto 8px; animation: spin 0.7s linear infinite; }
+  .wm-body.light .wm-spinner { border-top-color: #4A7AEA; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .wm-error { background: rgba(255,95,87,0.10); border: 0.5px solid rgba(255,95,87,0.25); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: #FF8A80; margin: 8px 12px; line-height: 1.5; }
+
+  /* Empty */
+  .wm-empty { text-align: center; padding: 24px 12px; color: rgba(255,255,255,0.38); font-size: 12px; }
+  .wm-body.light .wm-empty { color: rgba(0,0,0,0.42); }
+  .wm-empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
+
+  /* Annotation */
+  .annotation { margin-top: 14px; font-size: 11.5px; color: var(--text-faded); line-height: 1.7; }
+  .annotation code { background: var(--bg-card); padding: 2px 6px; border-radius: 4px; font-size: 10.5px; font-family: 'SF Mono', monospace; }
+  .annotation strong { color: var(--text-secondary); font-weight: 600; }
+
+  /* Two column for light/dark comparison */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .note { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; }
+  .note strong { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<h1>NewApiBar</h1>
+<div class="subtitle">页面设计系统 v1.0 — 深色 / 浅色双主题</div>
+
+<div class="note">
+  <strong>项目说明：</strong>NewApiBar 是一个 Electron 桌面浮窗，用于实时监控 New API 面板的余额、今日消耗和模型用量排行。
+  窗口尺寸约 260×450px，支持拖拽标题栏移动、边缘缩放、毛玻璃背景、透明度调节。
+</div>
+
+<h2>🎨 设计令牌 Design Tokens</h2>
+
+<h3>颜色</h3>
+<div class="tokens">
+  <div class="token"><div class="token-swatch" style="background:#EDEDF2"></div><div class="token-name">text-primary</div><div class="token-val">#EDEDF2</div></div>
+  <div class="token"><div class="token-swatch" style="background:rgba(255,255,255,0.55)"></div><div class="token-name">text-secondary</div><div class="token-val">55% white</div></div>
+  <div class="token"><div class="token-swatch" style="background:rgba(255,255,255,0.38)"></div><div class="token-name">text-faded</div><div class="token-val">38% white</div></div>
+  <div class="token"><div class="token-swatch" style="background:#6C9FFF"></div><div class="token-name">accent</div><div class="token-val">#6C9FFF</div></div>
+  <div class="token"><div class="token-swatch" style="background:#28C840"></div><div class="token-name">ok</div><div class="token-val">#28C840</div></div>
+  <div class="token"><div class="token-swatch" style="background:#FF5F57"></div><div class="token-name">err</div><div class="token-val">#FF5F57</div></div>
+  <div class="token"><div class="token-swatch" style="background:#FFD700"></div><div class="token-name">gold</div><div class="token-val">#FFD700</div></div>
+  <div class="token"><div class="token-swatch" style="background:rgba(18,18,28,0.80)"></div><div class="token-name">bg-dark</div><div class="token-val">rgba(18,18,28,0.8)</div></div>
+</div>
+
+<h3>字体</h3>
+<div class="tokens">
+  <div class="token"><div class="token-name" style="font-size:18px;font-weight:700">¥12.50</div><div class="token-val">metric-value 18px/700</div></div>
+  <div class="token"><div class="token-name" style="font-size:15px;font-weight:700">¥0.48</div><div class="token-val">metric-value.small 15px/700</div></div>
+  <div class="token"><div class="token-name" style="font-size:12.5px;font-weight:600">deepseek-chat</div><div class="token-val">model-name 12.5px/600</div></div>
+  <div class="token"><div class="token-name" style="font-size:11px;font-weight:500">余额</div><div class="token-val">metric-label 11px/500</div></div>
+  <div class="token"><div class="token-name" style="font-size:12px;font-weight:600;letter-spacing:0.5px">API PROXY</div><div class="token-val">title 12px/600</div></div>
+</div>
+
+<h3>间距 & 圆角</h3>
+<div class="tokens">
+  <div class="token"><div class="token-name">窗口圆角</div><div class="token-val">16px</div></div>
+  <div class="token"><div class="token-name">卡片圆角</div><div class="token-val">10px</div></div>
+  <div class="token"><div class="token-name">按钮圆角</div><div class="token-val">50% (圆形)</div></div>
+  <div class="token"><div class="token-name">行内间距</div><div class="token-val">8px / 6px / 4px</div></div>
+  <div class="token"><div class="token-name">外边距</div><div class="token-val">12px (左右)</div></div>
+</div>
+
+<h2>📱 页面总览</h2>
+
+<div class="screens">
+
+  <!-- 1. Dashboard -->
+  <div class="screen-card">
+    <div class="screen-label">1. 仪表盘 Dashboard <span>主界面 · 数据展示</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics">
+          <div class="wm-mcard">
+            <div class="wm-mlabel">💰 余额</div>
+            <div class="wm-mval">¥12.50</div>
+          </div>
+          <div class="wm-mcard">
+            <div class="wm-mlabel">🔥 今日消耗</div>
+            <div class="wm-mval s">¥0.48</div>
+          </div>
+        </div>
+        <div class="wm-divider"></div>
+        <div class="wm-slabel">今日模型消耗 Top 5</div>
+        <div class="wm-mlist">
+          <div class="wm-mrow">
+            <span class="wm-rank gold">1</span>
+            <div class="wm-minfo"><div class="wm-mname">deepseek-chat</div><div class="wm-mbar"><div class="fill" style="width:100%"></div></div></div>
+            <span class="wm-mcost">¥0.32</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank silver">2</span>
+            <div class="wm-minfo"><div class="wm-mname">glm-4</div><div class="wm-mbar"><div class="fill" style="width:45%"></div></div></div>
+            <span class="wm-mcost">¥0.10</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank bronze">3</span>
+            <div class="wm-minfo"><div class="wm-mname">gpt-4o-mini</div><div class="wm-mbar"><div class="fill" style="width:18%"></div></div></div>
+            <span class="wm-mcost">¥0.04</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank">4</span>
+            <div class="wm-minfo"><div class="wm-mname">claude-3-haiku</div><div class="wm-mbar"><div class="fill" style="width:9%"></div></div></div>
+            <span class="wm-mcost">¥0.02</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank">5</span>
+            <div class="wm-minfo"><div class="wm-mname">qwen-turbo</div><div class="wm-mbar"><div class="fill" style="width:3%"></div></div></div>
+            <span class="wm-mcost">¥0.01</span>
+          </div>
+        </div>
+        <div class="wm-footer">
+          <span><span class="wm-dot"></span> 已连接</span>
+          <span>更新于 09:42:18</span>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>结构：</strong>标题栏 + 双指标卡 + 分隔线 + 模型排行 Top5 + 底部状态栏。<br>
+      <strong>交互：</strong>刷新按钮旋转动画、模型行悬停高亮、排名 1-3 金银铜色标注。
+    </div>
+  </div>
+
+  <!-- 2. Dashboard Light -->
+  <div class="screen-card">
+    <div class="screen-label">2. 仪表盘 · 浅色主题 <span>light mode</span></div>
+    <div class="widget-mockup light-theme">
+      <div class="wm-body light">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#4A7AEA;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics">
+          <div class="wm-mcard">
+            <div class="wm-mlabel">💰 余额</div>
+            <div class="wm-mval">¥12.50</div>
+          </div>
+          <div class="wm-mcard">
+            <div class="wm-mlabel">🔥 今日消耗</div>
+            <div class="wm-mval s">¥0.48</div>
+          </div>
+        </div>
+        <div class="wm-divider"></div>
+        <div class="wm-slabel">今日模型消耗 Top 5</div>
+        <div class="wm-mlist">
+          <div class="wm-mrow">
+            <span class="wm-rank gold">1</span>
+            <div class="wm-minfo"><div class="wm-mname">deepseek-chat</div><div class="wm-mbar"><div class="fill" style="width:100%"></div></div></div>
+            <span class="wm-mcost">¥0.32</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank silver">2</span>
+            <div class="wm-minfo"><div class="wm-mname">glm-4</div><div class="wm-mbar"><div class="fill" style="width:45%"></div></div></div>
+            <span class="wm-mcost">¥0.10</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank bronze">3</span>
+            <div class="wm-minfo"><div class="wm-mname">gpt-4o-mini</div><div class="wm-mbar"><div class="fill" style="width:18%"></div></div></div>
+            <span class="wm-mcost">¥0.04</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank">4</span>
+            <div class="wm-minfo"><div class="wm-mname">claude-3-haiku</div><div class="wm-mbar"><div class="fill" style="width:9%"></div></div></div>
+            <span class="wm-mcost">¥0.02</span>
+          </div>
+          <div class="wm-mrow">
+            <span class="wm-rank">5</span>
+            <div class="wm-minfo"><div class="wm-mname">qwen-turbo</div><div class="wm-mbar"><div class="fill" style="width:3%"></div></div></div>
+            <span class="wm-mcost">¥0.01</span>
+          </div>
+        </div>
+        <div class="wm-footer">
+          <span><span class="wm-dot"></span> 已连接</span>
+          <span>更新于 09:42:18</span>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>浅色主题适配：</strong>背景转为白色系毛玻璃，文字反转为黑色系，accent 从 <code>#6C9FFF</code> 变为 <code>#4A7EA</code>，保持相同信息层级。
+    </div>
+  </div>
+
+  <!-- 3. Domain Input -->
+  <div class="screen-card">
+    <div class="screen-label">3. 域名输入 <span>设置弹窗 · 第一步</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics" style="opacity:0.3;filter:blur(1px)">
+          <div class="wm-mcard"><div class="wm-mlabel">💰 余额</div><div class="wm-mval">—</div></div>
+          <div class="wm-mcard"><div class="wm-mlabel">🔥 今日消耗</div><div class="wm-mval s">—</div></div>
+        </div>
+        <div style="position:relative;">
+          <!-- Modal overlay -->
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:10;border-radius:0 0 16px 16px;display:flex;align-items:center;justify-content:center;padding:12px;">
+            <div class="wm-modal" style="width:100%;">
+              <h3>🔗 第一步：API 地址</h3>
+              <label>New API 网站域名</label>
+              <div class="wm-input" style="color:rgba(255,255,255,0.25)">https://api-proxy.example.com</div>
+              <div class="wm-btns">
+                <button class="wm-btn-s">取消</button>
+                <button class="wm-btn-p">下一步</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>入口：</strong>首次启动或无域名配置时自动弹出，或点击 ⚙ 设置按钮触发。<br>
+      <strong>输入：</strong>URL 输入框，自动补全 <code>https://</code>、去除尾部 <code>/</code>。<br>
+      <strong>验证：</strong>空值或非法 URL 显示红色错误提示。
+    </div>
+  </div>
+
+  <!-- 4. Login -->
+  <div class="screen-card">
+    <div class="screen-label">4. 账号登录 <span>设置弹窗 · 第二步</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics" style="opacity:0.3;filter:blur(1px)">
+          <div class="wm-mcard"><div class="wm-mlabel">💰 余额</div><div class="wm-mval">—</div></div>
+          <div class="wm-mcard"><div class="wm-mlabel">🔥 今日消耗</div><div class="wm-mval s">—</div></div>
+        </div>
+        <div style="position:relative;">
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:10;border-radius:0 0 16px 16px;display:flex;align-items:center;justify-content:center;padding:12px;">
+            <div class="wm-modal" style="width:100%;">
+              <div class="wm-step">
+                <span class="wm-sdot done"></span>
+                <span class="wm-sdot active"></span>
+              </div>
+              <h3>🔑 第二步：登录</h3>
+              <div class="wm-domain">🔗 https://api-proxy.example.com</div>
+              <label>用户名</label>
+              <div class="wm-input" style="color:rgba(255,255,255,0.25)">admin</div>
+              <label>密码</label>
+              <div class="wm-input" style="color:rgba(255,255,255,0.25)">••••••••</div>
+              <div class="wm-btns">
+                <button class="wm-btn-s">上一步</button>
+                <button class="wm-btn-p">登录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>步骤指示器：</strong>两圆点，已完成步骤变短条 + 半透明，当前步骤变长条高亮。<br>
+      <strong>域名展示：</strong>第一步输入的域名以蓝色标签形式展示，不可编辑，可点击「上一步」返回修改。<br>
+      <strong>交互：</strong>回车键触发登录，错误时输入框下方显示红色提示。
+    </div>
+  </div>
+
+  <!-- 5. Settings -->
+  <div class="screen-card">
+    <div class="screen-label">5. 设置面板 <span>已登录状态</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics" style="opacity:0.3;filter:blur(1px)">
+          <div class="wm-mcard"><div class="wm-mlabel">💰 余额</div><div class="wm-mval">¥12.50</div></div>
+          <div class="wm-mcard"><div class="wm-mlabel">🔥 今日消耗</div><div class="wm-mval s">¥0.48</div></div>
+        </div>
+        <div style="position:relative;">
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:10;border-radius:0 0 16px 16px;display:flex;align-items:center;justify-content:center;padding:12px;">
+            <div class="wm-modal" style="width:100%;">
+              <h3>⚙ 设置</h3>
+              <div class="wm-domain">🔗 https://api-proxy.example.com</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-bottom:10px;">已登录：<span style="color:#6C9FFF;font-weight:600;">admin</span></div>
+              <label>主题</label>
+              <div class="wm-theme">
+                <div class="wm-theme-btn active">🌙 深色</div>
+                <div class="wm-theme-btn">☀️ 浅色</div>
+              </div>
+              <label>更新频率（分钟）</label>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+                <div style="flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;position:relative;">
+                  <div style="position:absolute;left:0;top:0;height:100%;width:8%;background:#6C9FFF;border-radius:2px;"></div>
+                </div>
+                <span style="font-size:11px;color:#EDEDF2;min-width:22px;text-align:right;font-weight:600;">5</span>
+              </div>
+              <label>透明度</label>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+                <div style="flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;position:relative;">
+                  <div style="position:absolute;left:0;top:0;height:100%;width:40%;background:#6C9FFF;border-radius:2px;"></div>
+                </div>
+                <span style="font-size:11px;color:#EDEDF2;min-width:28px;text-align:right;font-weight:600;">20%</span>
+              </div>
+              <div class="wm-btns">
+                <button class="wm-btn-s">关闭</button>
+                <button class="wm-btn-d">退出登录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>已登录信息：</strong>域名 + 用户名展示，不可编辑。<br>
+      <strong>主题切换：</strong>深色/浅色两按钮，当前项高亮。<br>
+      <strong>滑块：</strong>更新频率 1-60 分钟，透明度 10%-60%。实时预览背景变化。<br>
+      <strong>操作：</strong>关闭仅保存设置，退出登录清空认证并返回域名输入页。
+    </div>
+  </div>
+
+  <!-- 6. Loading -->
+  <div class="screen-card">
+    <div class="screen-label">6. 加载状态 <span>首次启动 / 手动刷新</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn" style="background:rgba(40,200,64,0.25);color:#28C840;animation:spin 0.7s linear infinite;">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics">
+          <div class="wm-mcard">
+            <div class="wm-mlabel">💰 余额</div>
+            <div class="wm-mval" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+          <div class="wm-mcard">
+            <div class="wm-mlabel">🔥 今日消耗</div>
+            <div class="wm-mval s" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+        </div>
+        <div class="wm-divider"></div>
+        <div class="wm-slabel">今日模型消耗 Top 5</div>
+        <div class="wm-loading">
+          <div class="wm-spinner"></div>
+          正在连接…
+        </div>
+        <div class="wm-footer">
+          <span><span class="wm-dot" style="animation:pulseDot 1.2s ease-in-out infinite"></span> 刷新中…</span>
+          <span>—</span>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>手动刷新：</strong>刷新按钮旋转动画 + 状态点脉动动画 + 列表区 spinner。<br>
+      <strong>自动刷新：</strong>静默更新，无动画干扰，失败不弹错。<br>
+      <strong>并发锁：</strong><code>isRefreshing</code> 防止重复触发。
+    </div>
+  </div>
+
+  <!-- 7. Error -->
+  <div class="screen-card">
+    <div class="screen-label">7. 错误状态 <span>连接失败 / 登录过期</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics">
+          <div class="wm-mcard">
+            <div class="wm-mlabel">💰 余额</div>
+            <div class="wm-mval" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+          <div class="wm-mcard">
+            <div class="wm-mlabel">🔥 今日消耗</div>
+            <div class="wm-mval s" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+        </div>
+        <div class="wm-divider"></div>
+        <div class="wm-slabel">今日模型消耗 Top 5</div>
+        <div class="wm-error">登录已过期，请重新登录</div>
+        <div class="wm-footer">
+          <span><span class="wm-dot err"></span> 连接失败</span>
+          <span>—</span>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>401 过期：</strong>检测 <code>expired: true</code>，显示「登录已过期」错误框，底部红点 + 连接失败。<br>
+      <strong>网络错误：</strong>显示具体错误信息，保留上一次有效数据（如有）。<br>
+      <strong>交互：</strong>点击 ⚙ 进入设置重新登录。
+    </div>
+  </div>
+
+  <!-- 8. Empty -->
+  <div class="screen-card">
+    <div class="screen-label">8. 空状态 <span>未登录 / 退出登录后</span></div>
+    <div class="widget-mockup">
+      <div class="wm-body">
+        <div class="wm-titlebar">
+          <span class="wm-title">NewApiBar</span>
+          <div class="wm-controls">
+            <div class="wm-btn" style="background:#6C9FFF;color:#fff;font-size:10px">📌</div>
+            <div class="wm-btn">⚙</div>
+            <div class="wm-btn">↻</div>
+            <div class="wm-btn">−</div>
+          </div>
+        </div>
+        <div class="wm-metrics">
+          <div class="wm-mcard">
+            <div class="wm-mlabel">💰 余额</div>
+            <div class="wm-mval" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+          <div class="wm-mcard">
+            <div class="wm-mlabel">🔥 今日消耗</div>
+            <div class="wm-mval s" style="color:rgba(255,255,255,0.25)">—</div>
+          </div>
+        </div>
+        <div class="wm-divider"></div>
+        <div class="wm-empty">
+          <div class="wm-empty-icon">🔌</div>
+          <div>未连接</div>
+          <div style="font-size:10.5px;margin-top:4px;opacity:0.6">点击 ⚙ 进行登录</div>
+        </div>
+        <div class="wm-footer">
+          <span><span class="wm-dot" style="background:rgba(128,128,128,0.30);box-shadow:none"></span> 未登录</span>
+          <span>—</span>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <strong>触发：</strong>首次启动无配置、或退出登录后。<br>
+      <strong>引导：</strong>300ms 后自动弹出设置弹窗，用户也可手动点击 ⚙ 进入。<br>
+      <strong>占位：</strong>指标区显示 <code>—</code>，模型区显示「未连接」引导文案。
+    </div>
+  </div>
+
+</div>
+
+<h2>🔄 页面流转图</h2>
+
+<div class="screen-card" style="max-width:900px;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:20px;font-size:12px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;">🚀 首次启动</div>
+      <div style="color:var(--text-faded);font-size:11px;">无配置</div>
+    </div>
+    <div style="color:var(--text-faded);">→</div>
+    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;color:var(--accent);">🔗 域名输入</div>
+      <div style="color:var(--text-faded);font-size:11px;">Step 1</div>
+    </div>
+    <div style="color:var(--text-faded);">→</div>
+    <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;color:var(--accent);">🔑 账号登录</div>
+      <div style="color:var(--text-faded);font-size:11px;">Step 2</div>
+    </div>
+    <div style="color:var(--text-faded);">→</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;">📊 仪表盘</div>
+      <div style="color:var(--text-faded);font-size:11px;">自动刷新</div>
+    </div>
+    <div style="color:var(--text-faded);">→</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;">⚙ 设置</div>
+      <div style="color:var(--text-faded);font-size:11px;">主题/透明/退出</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 20px 20px;font-size:12px;">
+    <div style="color:var(--text-faded);font-size:11px;">┌────────────────────────────────────────┐</div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 20px 20px;font-size:12px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;">❌ 登录过期</div>
+      <div style="color:var(--text-faded);font-size:11px;">401 检测</div>
+    </div>
+    <div style="color:var(--text-faded);">←</div>
+    <div style="background:var(--bg-card);border:1px solid rgba(255,95,87,0.3);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;color:#FF8A80;">⚠️ 错误状态</div>
+      <div style="color:var(--text-faded);font-size:11px;">显示错误</div>
+    </div>
+    <div style="color:var(--text-faded);">←</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px;">
+      <div style="font-weight:700;margin-bottom:4px;">⏳ 加载中</div>
+      <div style="color:var(--text-faded);font-size:11px;">手动/自动刷新</div>
+    </div>
+  </div>
+</div>
+
+<h2>📐 设计规范速查</h2>
+
+<div class="screen-card" style="max-width:900px;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;color:var(--text-secondary);">
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;font-weight:600;color:var(--text-primary);width:120px;">元素</td>
+      <td style="padding:10px 12px;font-weight:600;color:var(--text-primary);">尺寸 / 样式</td>
+      <td style="padding:10px 12px;font-weight:600;color:var(--text-primary);">颜色（深色）</td>
+      <td style="padding:10px 12px;font-weight:600;color:var(--text-primary);">颜色（浅色）</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">窗口</td><td style="padding:8px 12px;">260×450px, 圆角 16px</td><td style="padding:8px 12px;">bg: rgba(18,18,28,0.80)</td><td style="padding:8px 12px;">bg: rgba(250,250,252,0.88)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">标题</td><td style="padding:8px 12px;">12px / weight 600</td><td style="padding:8px 12px;">rgba(255,255,255,0.55)</td><td style="padding:8px 12px;">rgba(0,0,0,0.55)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">指标值</td><td style="padding:8px 12px;">18px / weight 700, tabular-nums</td><td style="padding:8px 12px;">#EDEDF2</td><td style="padding:8px 12px;">#1A1A1E</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">指标标签</td><td style="padding:8px 12px;">11px / weight 500</td><td style="padding:8px 12px;">rgba(255,255,255,0.55)</td><td style="padding:8px 12px;">rgba(0,0,0,0.55)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">模型名</td><td style="padding:8px 12px;">12.5px / weight 600, ellipsis</td><td style="padding:8px 12px;">#EDEDF2</td><td style="padding:8px 12px;">#1A1A1E</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">模型消耗</td><td style="padding:8px 12px;">12px / weight 700, tabular-nums</td><td style="padding:8px 12px;">#6C9FFF</td><td style="padding:8px 12px;">#4A7AEA</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">进度条</td><td style="padding:8px 12px;">3px 高, 相对第一名 100%</td><td style="padding:8px 12px;">#6C9FFF / rgba(108,159,255,0.15)</td><td style="padding:8px 12px;">#4A7AEA / rgba(74,122,234,0.12)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">排名 1-3</td><td style="padding:8px 12px;">11px / weight 800</td><td style="padding:8px 12px;">金 #FFD700 / 银 #C0C0C0 / 铜 #CD7F32</td><td style="padding:8px 12px;">同上，铜色微调 #B87333</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">按钮</td><td style="padding:8px 12px;">22×22px 圆形, 12px 图标</td><td style="padding:8px 12px;">bg: rgba(255,255,255,0.08)</td><td style="padding:8px 12px;">bg: rgba(0,0,0,0.06)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">弹窗</td><td style="padding:8px 12px;">230px 宽, 圆角 12px, 模糊 16px</td><td style="padding:8px 12px;">bg: rgba(28,28,40,0.97)</td><td style="padding:8px 12px;">bg: rgba(255,255,255,0.96)</td></tr>
+    <tr><td style="padding:8px 12px;">状态点</td><td style="padding:8px 12px;">6×6px 圆形, glow 阴影</td><td style="padding:8px 12px;">绿 #28C840 / 黄 #FFBD2E / 红 #FF5F57</td><td style="padding:8px 12px;">同上</td></tr>
+  </table>
+</div>
+
+<div style="text-align:center;margin-top:48px;color:var(--text-faded);font-size:12px;">
+  NewApiBar Design System v1.0 · 2026
+</div>
+
+</body>
+</html>

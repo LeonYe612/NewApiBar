@@ -280,7 +280,7 @@ function buildTrayMenu(result) {
 
 function showTrayPopup() {
   if (!tray) return
-  const menuItems = [{ label: 'API Proxy', enabled: false }]
+  const menuItems = [{ label: 'NewApiBar', enabled: false }]
 
   if (summaryData) {
     const root = summaryData.userInfo?.data?.data ?? summaryData.userInfo?.data
@@ -392,7 +392,7 @@ ipcMain.handle('load-config', async () => {
     hasAuth: !!(cfg.cookies || cfg.token),
     interval: cfg.interval || 1,
     theme: cfg.theme || 'dark',
-    opacity: cfg.opacity || 20
+    opacity: cfg.opacity ?? 80
   }
 })
 

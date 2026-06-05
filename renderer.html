@@ -3,64 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Widget</title>
+<title>NewApiBar</title>
 <style>
   :root {
-    --card-bg: rgba(255,255,255,0.06);
-    --card-border: rgba(255,255,255,0.06);
-    --text-primary: #EDEDF2;
-    --text-secondary: rgba(255,255,255,0.55);
-    --text-faded: rgba(255,255,255,0.38);
-    --text-dim: rgba(255,255,255,0.25);
-    --divider: rgba(255,255,255,0.07);
-    --divider-strong: rgba(255,255,255,0.09);
-    --btn-bg: rgba(255,255,255,0.08);
-    --btn-color: rgba(255,255,255,0.50);
-    --btn-hover-bg: rgba(255,255,255,0.18);
-    --model-row-bg: rgba(255,255,255,0.03);
-    --model-row-hover: rgba(255,255,255,0.08);
-    --border: rgba(255,255,255,0.12);
-    --footer-border: rgba(255,255,255,0.07);
-    --modal-bg: rgba(28,28,40,0.97);
+    --bg: #0D0D14;
+    --card-bg: #141423;
+    --card-border: #2E2E47;
+    --text-primary: #F2F2F8;
+    --text-secondary: #9393A6;
+    --text-faded: #555555;
     --accent: #6C9FFF;
     --accent-dim: rgba(108,159,255,0.15);
+    --ok: #28C840;
+    --err: #FF5F57;
+    --err-dim: rgba(255,95,87,0.12);
+    --modal-bg: rgba(20,20,40,0.97);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
   }
   body.light {
-    --card-bg: rgba(0,0,0,0.04);
-    --card-border: rgba(0,0,0,0.06);
-    --text-primary: #1A1A1E;
-    --text-secondary: rgba(0,0,0,0.55);
-    --text-faded: rgba(0,0,0,0.42);
-    --text-dim: rgba(0,0,0,0.32);
-    --divider: rgba(0,0,0,0.07);
-    --divider-strong: rgba(0,0,0,0.10);
-    --btn-bg: rgba(0,0,0,0.06);
-    --btn-color: rgba(0,0,0,0.45);
-    --btn-hover-bg: rgba(0,0,0,0.12);
-    --model-row-bg: rgba(0,0,0,0.02);
-    --model-row-hover: rgba(0,0,0,0.06);
-    --border: rgba(0,0,0,0.12);
-    --footer-border: rgba(0,0,0,0.07);
-    --modal-bg: rgba(255,255,255,0.96);
+    --bg: #F2F2F8;
+    --card-bg: #FFFFFF;
+    --card-border: #E0E0E8;
+    --text-primary: #1A1A2E;
+    --text-secondary: #555555;
+    --text-faded: #999999;
     --accent: #4A7AEA;
     --accent-dim: rgba(74,122,234,0.12);
+    --modal-bg: rgba(255,255,255,0.96);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
 
+  html, body {
+    height: 100%;
+  }
+
   body {
-    font-family: -apple-system, 'PingFang SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
-    background: rgba(18,18,28,0.80);
-    backdrop-filter: blur(28px) saturate(1.3);
-    -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    font-family: -apple-system, 'Noto Sans SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    background: var(--bg);
     color: var(--text-primary);
     border-radius: 16px;
     overflow: hidden;
     user-select: none;
-    border: 0.5px solid var(--border);
+    border: 0.5px solid var(--card-border);
     box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
   }
 
   /* ── 标题栏 ── */
@@ -70,7 +59,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px 4px;
-    border-bottom: 0.5px solid var(--divider-strong);
+    border-bottom: 0.5px solid var(--card-border);
+    flex-shrink: 0;
   }
   .titlebar .title {
     font-size: 12px;
@@ -90,24 +80,34 @@
     cursor: pointer;
     font-size: 12px;
     display: flex; align-items: center; justify-content: center;
-    background: var(--btn-bg);
-    color: var(--btn-color);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-faded);
     transition: all 0.18s ease;
     line-height: 1;
     position: relative;
   }
-  .btn:hover { background: var(--btn-hover-bg); color: var(--text-primary); transform: scale(1.08); }
+  .btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); transform: scale(1.08); }
   .btn.pin.active { background: var(--accent); color: #fff; }
-  .btn.close:hover { background: #FF5F57; color: #fff; }
-  .btn.refresh:hover { background: #28C840; color: #fff; }
+  .btn.close:hover { background: var(--err); color: #fff; }
+  .btn.refresh:hover { background: var(--ok); color: #fff; }
   .btn.refresh.spinning {
-    background: rgba(40, 200, 64, 0.25);
-    color: #28C840;
+    background: rgba(40,200,64,0.25);
+    color: var(--ok);
     pointer-events: none;
     animation: spinBtn 0.7s linear infinite;
   }
   @keyframes spinBtn { to { transform: rotate(360deg); } }
   .btn.settings:hover { background: var(--accent); color: #fff; }
+
+  /* ── 可滚动内容区 ── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .scroll-area::-webkit-scrollbar { width: 3px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.20); border-radius: 2px; }
 
   /* ── 核心指标区 ── */
   .metrics {
@@ -118,12 +118,12 @@
   .metric-card {
     flex: 1;
     background: var(--card-bg);
+    border: 0.5px solid var(--card-border);
     border-radius: 10px;
     padding: 8px 10px;
-    border: 0.5px solid var(--card-border);
     transition: background 0.15s;
   }
-  .metric-card:hover { background: var(--model-row-hover); }
+  .metric-card:hover { background: rgba(255,255,255,0.04); }
   .metric-label {
     font-size: 11px;
     color: var(--text-secondary);
@@ -143,7 +143,7 @@
   /* ── 分隔线 ── */
   .divider {
     height: 0.5px;
-    background: var(--divider);
+    background: var(--card-border);
     margin: 6px 12px;
   }
 
@@ -159,21 +159,17 @@
 
   .model-list {
     padding: 0 12px 6px;
-    overflow-y: auto;
   }
-  .model-list::-webkit-scrollbar { width: 3px; }
-  .model-list::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.20); border-radius: 2px; }
-
   .model-row {
     display: flex;
     align-items: center;
     padding: 5px 8px;
     border-radius: 7px;
     margin-bottom: 2px;
-    background: var(--model-row-bg);
+    background: rgba(255,255,255,0.02);
     transition: background 0.15s;
   }
-  .model-row:hover { background: var(--model-row-hover); }
+  .model-row:hover { background: rgba(255,255,255,0.06); }
   .model-rank {
     font-size: 11px;
     font-weight: 700;
@@ -181,9 +177,9 @@
     width: 16px;
     flex-shrink: 0;
   }
-  .model-rank.r1 { color: #FFD700; font-weight: 800; }
-  .model-rank.r2 { color: #C0C0C0; font-weight: 800; }
-  .model-rank.r3 { color: #CD7F32; font-weight: 800; }
+  .model-rank.r1 { color: #FFD700; }
+  .model-rank.r2 { color: #C0C0C0; }
+  .model-rank.r3 { color: #CD7F32; }
   body.light .model-rank.r3 { color: #B87333; }
   .model-info { flex: 1; min-width: 0; }
   .model-name {
@@ -223,9 +219,9 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .status-dot.ok   { background: #28C840; box-shadow: 0 0 6px #28C84088; }
-  .status-dot.warn { background: #FFBD2E; box-shadow: 0 0 6px #FFBD2E88; }
-  .status-dot.err  { background: #FF5F57; box-shadow: 0 0 6px #FF5F5788; }
+  .status-dot.ok      { background: var(--ok); box-shadow: 0 0 6px rgba(40,200,64,0.5); }
+  .status-dot.warn    { background: #FFBD2E; box-shadow: 0 0 6px rgba(255,189,46,0.5); }
+  .status-dot.err     { background: var(--err); box-shadow: 0 0 6px rgba(255,95,87,0.5); }
   .status-dot.unknown { background: rgba(128,128,128,0.30); }
   .status-dot.pulsing { animation: pulseDot 1.2s ease-in-out infinite; }
   @keyframes pulseDot {
@@ -251,7 +247,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .error-msg {
-    background: rgba(255,95,87,0.10);
+    background: var(--err-dim);
     border: 0.5px solid rgba(255,95,87,0.25);
     border-radius: 8px;
     padding: 8px 10px;
@@ -277,7 +273,7 @@
     background: var(--modal-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 0.5px solid var(--border);
+    border: 0.5px solid var(--card-border);
     border-radius: 12px;
     padding: 14px;
     width: 230px;
@@ -298,21 +294,25 @@
     margin-bottom: 3px;
     font-weight: 500;
   }
-  .modal input {
+  .modal input[type="text"],
+  .modal input[type="password"],
+  .modal input[type="url"] {
     width: 100%;
-    background: var(--card-bg);
+    background: rgba(255,255,255,0.06);
     border: 0.5px solid var(--card-border);
     border-radius: 6px;
     padding: 6px 8px;
     color: var(--text-primary);
     font-size: 12px;
     outline: none;
-    margin-bottom: 8px;
     box-sizing: border-box;
     transition: border-color 0.15s;
+    margin-bottom: 8px;
   }
   .modal input:focus { border-color: var(--accent); }
   .modal input::placeholder { color: var(--text-faded); }
+
+  /* 主题切换按钮 */
   .theme-toggle {
     display: flex;
     gap: 6px;
@@ -326,7 +326,7 @@
     cursor: pointer;
     font-size: 10.5px;
     font-weight: 600;
-    background: var(--card-bg);
+    background: rgba(255,255,255,0.06);
     color: var(--text-faded);
     transition: all 0.15s;
   }
@@ -335,10 +335,59 @@
     color: #fff;
     border-color: var(--accent);
   }
+
+  /* 自定义滑块：1–30 分钟 */
+  .slider-wrap {
+    margin-bottom: 10px;
+  }
+  .slider-track {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 8px 0 4px;
+  }
+  .slider-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--accent);
+    border-radius: 3px;
+    pointer-events: none;
+  }
+  .slider-thumb {
+    position: absolute;
+    top: 50%;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 2;
+    transition: box-shadow 0.15s;
+  }
+  .slider-thumb:active { cursor: grabbing; box-shadow: 0 0 0 4px var(--accent-dim); }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-faded);
+  }
+  .slider-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 2px;
+  }
+
   .modal-btns {
     display: flex;
     gap: 6px;
     justify-content: flex-end;
+    margin-top: 4px;
   }
   .modal-btns button {
     padding: 5px 12px;
@@ -350,10 +399,10 @@
     transition: all 0.15s;
   }
   .btn-cancel {
-    background: var(--btn-bg);
+    background: rgba(255,255,255,0.06);
     color: var(--text-faded);
   }
-  .btn-cancel:hover { background: var(--btn-hover-bg); }
+  .btn-cancel:hover { background: rgba(255,255,255,0.12); }
   .btn-save {
     background: var(--accent);
     color: #fff;
@@ -370,11 +419,11 @@
   .step-dot {
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--divider-strong);
+    background: var(--card-border);
     transition: all 0.25s;
   }
   .step-dot.active { background: var(--accent); width: 22px; border-radius: 3px; }
-  .step-dot.done { background: var(--accent); opacity: 0.6; }
+  .step-dot.done   { background: var(--accent); opacity: 0.6; }
 
   .domain-display {
     font-size: 10.5px;
@@ -388,15 +437,17 @@
     font-weight: 500;
   }
 
-  /* ── 底部状态栏 ── */
+  /* ── 底部状态栏（固定在底部）─── */
   .footer {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 5px 12px 8px;
-    border-top: 0.5px solid var(--footer-border);
+    border-top: 0.5px solid var(--card-border);
     font-size: 10.5px;
     color: var(--text-faded);
+    margin-top: auto;
   }
   .footer .updated { text-align: right; }
 </style>
@@ -405,7 +456,7 @@
 
 <!-- 标题栏 -->
 <div class="titlebar">
-  <span class="title">API PROXY</span>
+  <span class="title">NewApiBar</span>
   <div class="controls">
     <button class="btn pin" id="pinBtn" onclick="togglePin()" title="在所有桌面显示">📌</button>
     <button class="btn settings" onclick="showSettings()" title="设置">⚙</button>
@@ -414,32 +465,35 @@
   </div>
 </div>
 
-<!-- 核心指标 -->
-<div class="metrics">
-  <div class="metric-card">
-    <div class="metric-label">💰 余额</div>
-    <div class="metric-value" id="balanceVal">—</div>
+<!-- 可滚动内容 -->
+<div class="scroll-area">
+  <!-- 核心指标 -->
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">余额</div>
+      <div class="metric-value" id="balanceVal">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">今日消耗</div>
+      <div class="metric-value small" id="todayCostVal">—</div>
+    </div>
   </div>
-  <div class="metric-card">
-    <div class="metric-label">🔥 今日消耗</div>
-    <div class="metric-value small" id="todayCostVal">—</div>
+
+  <div class="divider"></div>
+
+  <!-- 模型 Top5 -->
+  <div class="section-label" id="modelSectionLabel">今日模型消耗 Top 5</div>
+  <div class="model-list" id="modelList">
+    <div class="loading">
+      <div class="spinner"></div>
+      正在连接…
+    </div>
   </div>
+
+  <div class="error-msg" id="errorBox" style="display:none;"></div>
 </div>
 
-<div class="divider"></div>
-
-<!-- 模型 Top5 -->
-<div class="section-label" id="modelSectionLabel">今日模型消耗 Top 5</div>
-<div class="model-list" id="modelList">
-  <div class="loading">
-    <div class="spinner"></div>
-    正在连接…
-  </div>
-</div>
-
-<div class="error-msg" id="errorBox" style="display:none;"></div>
-
-<!-- 底部状态 -->
+<!-- 底部状态栏（margin-top:auto 使其固定在底部） -->
 <div class="footer">
   <span id="statusText"><span class="status-dot unknown"></span> 等待中</span>
   <span class="updated" id="updatedText">—</span>
@@ -452,7 +506,7 @@
     <div id="domainStep">
       <h3>🔗 第一步：API 地址</h3>
       <label>New API 网站域名</label>
-      <input type="url" id="domainInput" placeholder="https://api-proxy.example.com" />
+      <input type="url" id="domainInput" placeholder="https://api.example.com" />
       <div class="error-msg" id="domainError" style="display:none;margin:0 0 8px;"></div>
       <div class="modal-btns">
         <button class="btn-cancel" onclick="hideSettings()">取消</button>
@@ -486,24 +540,37 @@
       <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
         已登录：<span id="loggedUser" style="color:var(--accent);font-weight:600;"></span>
       </div>
+
       <label>主题</label>
       <div class="theme-toggle">
         <button id="themeDark" onclick="setTheme('dark')">🌙 深色</button>
         <button id="themeLight" onclick="setTheme('light')">☀️ 浅色</button>
       </div>
-      <label>更新频率（分钟）</label>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-        <input type="range" id="intervalSlider" min="1" max="60" value="1" oninput="document.getElementById('intervalVal').textContent=this.value" style="flex:1;accent-color:var(--accent);height:14px;" />
-        <span id="intervalVal" style="font-size:11px;color:var(--text-primary);min-width:22px;text-align:right;font-weight:600;">1</span>
+
+      <label>刷新频率</label>
+      <div class="slider-wrap">
+        <div class="slider-value" id="intervalValue">1 分钟</div>
+        <div class="slider-track" id="intervalTrack">
+          <div class="slider-fill" id="intervalFill"></div>
+          <div class="slider-thumb" id="intervalThumb"></div>
+        </div>
+        <div class="slider-labels">
+          <span>1 分钟</span>
+          <span>30 分钟</span>
+        </div>
       </div>
+
       <label>透明度</label>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-        <input type="range" id="opacitySlider" min="10" max="60" value="20" oninput="applyOpacity(this.value);document.getElementById('opacityVal').textContent=this.value+'%';saveOpacity(this.value)" style="flex:1;accent-color:var(--accent);height:14px;" />
-        <span id="opacityVal" style="font-size:11px;color:var(--text-primary);min-width:28px;text-align:right;font-weight:600;">20%</span>
+        <input type="range" id="opacitySlider" min="10" max="100" value="80"
+               oninput="applyOpacity(this.value);document.getElementById('opacityVal').textContent=this.value+'%';saveOpacity(this.value)"
+               style="flex:1;accent-color:var(--accent);height:14px;" />
+        <span id="opacityVal" style="font-size:11px;color:var(--text-primary);min-width:28px;text-align:right;font-weight:600;">80%</span>
       </div>
+
       <div class="modal-btns">
         <button class="btn-cancel" onclick="hideSettings()">关闭</button>
-        <button class="btn-save" style="background:#FF5F57;" onclick="doLogout()">退出登录</button>
+        <button class="btn-save" style="background:var(--err);" onclick="doLogout()">退出登录</button>
       </div>
     </div>
   </div>
@@ -512,20 +579,15 @@
 <script>
   let currentData = null
   let pinned = true
-  let currentOpacity = 20
+  let currentOpacity = 80
   let currentDomain = ''
+  let currentInterval = 1   // 分钟，默认 1
 
   const QUOTA_PER_YUAN = 500000
+  const MIN_INTERVAL = 1
+  const MAX_INTERVAL = 30
 
-  function normalizeDomain(raw) {
-    let u = raw.trim()
-    if (!u) return ''
-    if (!/^https?:\/\//i.test(u)) u = 'https://' + u
-    if (u.endsWith('/')) u = u.slice(0, -1)
-    return u
-  }
-
-  /* ── 工具 ──────────────────────────────── */
+  /* ── 工具 ────────────────────────────── */
   function extractBalance(data) {
     if (!data || !data.ok) return null
     const d = data.data ?? null
@@ -616,7 +678,7 @@
 
     const { userInfo, logs, tokens } = result
     const balance = extractBalance(userInfo) ?? extractBalance(tokens)
-    const todayUsage = extractTodayUsage(logs)
+    const todayUsage = extractTodayUsage(logs) ?? null
     const models = extractModelRanking(logs) ?? []
 
     renderMetrics(balance, todayUsage)
@@ -649,28 +711,23 @@
   let isRefreshing = false
   let lastGoodData = null
 
-  // 手动刷新：旋转按钮 + 脉动状态点，保留旧数据
   async function manualRefresh() {
     if (isRefreshing) return
     isRefreshing = true
-
     const btn = document.querySelector('.btn.refresh')
     btn?.classList.add('spinning')
     document.getElementById('statusText').innerHTML =
       '<span class="status-dot pulsing"></span> 刷新中…'
-
     const result = await window.widgetAPI?.fetchData()
     if (result) {
       currentData = result
       if (!result.expired && !result.error) lastGoodData = result
       render(result)
     }
-
     isRefreshing = false
     btn?.classList.remove('spinning')
   }
 
-  // 自动刷新（定时器 / 托盘菜单）：静默更新
   async function autoRefresh() {
     if (isRefreshing) return
     isRefreshing = true
@@ -681,26 +738,79 @@
         lastGoodData = result
         render(result)
       }
-    } catch {} // 静默
+    } catch {}
     isRefreshing = false
   }
 
-  /* ── 两步骤登录流程 ───────────────────── */
+  /* ── 自定义滑块：1–30 分钟 ────────────────── */
+  function initIntervalSlider() {
+    const track  = document.getElementById('intervalTrack')
+    const fill   = document.getElementById('intervalFill')
+    const thumb  = document.getElementById('intervalThumb')
+    const valueEl = document.getElementById('intervalValue')
+    if (!track) return
+
+    let dragging = false
+
+    function pctFromValue(v) { return (v - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL) * 100 }
+    function valueFromPct(pct) { return Math.round(pct / 100 * (MAX_INTERVAL - MIN_INTERVAL) + MIN_INTERVAL) }
+
+    function updateUI(val) {
+      const pct = pctFromValue(val)
+      fill.style.width = pct + '%'
+      thumb.style.left  = pct + '%'
+      valueEl.textContent  = val + ' 分钟'
+      currentInterval  = val
+    }
+
+    function handlePointer(e) {
+      const rect = track.getBoundingClientRect()
+      let pct = (e.clientX - rect.left) / rect.width * 100
+      pct = Math.max(0, Math.min(100, pct))
+      const val = valueFromPct(pct)
+      updateUI(val)
+    }
+
+    // 点击轨道跳转
+    track.addEventListener('pointerdown', e => {
+      dragging = true
+      thumb.setPointerCapture(e.pointerId)
+      handlePointer(e)
+    })
+    thumb.addEventListener('pointerdown', e => {
+      dragging = true
+      thumb.setPointerCapture(e.pointerId)
+      e.stopPropagation()
+    })
+    window.addEventListener('pointermove', e => { if (dragging) handlePointer(e) })
+    window.addEventListener('pointerup', () => { dragging = false })
+
+    // 初始化
+    updateUI(currentInterval)
+    return { updateUI }
+  }
+
+  let _intervalSlider = null   // { updateUI(val) }
+
+  /* ── 两步骤登录流程 ────────────────── */
   async function showSettings() {
     const cfg = await window.widgetAPI?.loadConfig()
     currentDomain = cfg?.apiBase || ''
 
     if (cfg?.hasAuth) {
-      // 已登录 → 显示设置
       showLoggedInView(cfg)
     } else if (currentDomain) {
-      // 有域名，未登录 → 直接到账号密码那步
       showLoginStep(currentDomain)
     } else {
-      // 无域名 → 从域名输入开始
       showDomainStep()
     }
     document.getElementById('settingsModal').classList.add('open')
+
+    // 延迟初始化滑块，等 DOM 渲染完
+    setTimeout(() => {
+      if (!_intervalSlider) _intervalSlider = initIntervalSlider()
+      _intervalSlider.updateUI(currentInterval)
+    }, 100)
   }
 
   function showDomainStep() {
@@ -731,12 +841,13 @@
     document.getElementById('loggedIn').style.display = 'block'
     document.getElementById('loggedUser').textContent = cfg.username || '已登录'
     document.getElementById('loggedDomain').textContent = '🔗 ' + (cfg.apiBase || '未设置')
-    document.getElementById('intervalSlider').value = cfg.interval || 1
-    document.getElementById('intervalVal').textContent = cfg.interval || 1
+    currentInterval = Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, cfg.interval || 1))
+    document.getElementById('intervalSlider')  // 兼容旧字段名
+    if (_intervalSlider) _intervalSlider.updateUI(currentInterval)
     const t = cfg.theme || 'dark'
     document.getElementById('themeDark').classList.toggle('active', t === 'dark')
     document.getElementById('themeLight').classList.toggle('active', t === 'light')
-    const op = cfg.opacity || 20
+    const op = cfg.opacity || 80
     document.getElementById('opacitySlider').value = op
     document.getElementById('opacityVal').textContent = op + '%'
   }
@@ -745,29 +856,33 @@
     showDomainStep()
   }
 
+  function normalizeDomain(raw) {
+    let u = raw.trim()
+    if (!u) return ''
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u
+    if (u.endsWith('/')) u = u.slice(0, -1)
+    return u
+  }
+
   async function saveDomainAndNext() {
     const raw = document.getElementById('domainInput').value
     const domain = normalizeDomain(raw)
     if (!domain) {
       const err = document.getElementById('domainError')
-      err.textContent = '请输入有效的域名（如 https://api-proxy.example.com）'
+      err.textContent = '请输入有效的域名（如 https://api.example.com）'
       err.style.display = 'block'
       return
     }
     document.getElementById('domainError').style.display = 'none'
     currentDomain = domain
-
-    // 保存域名
     await window.widgetAPI?.saveDomain({ domain })
-
-    // 进入第二步
     showLoginStep(domain)
   }
 
   function hideSettings() {
     document.getElementById('settingsModal').classList.remove('open')
-    const slider = document.getElementById('intervalSlider')
-    if (slider) window.widgetAPI?.setRefreshInterval(parseInt(slider.value))
+    // 保存设置
+    if (_intervalSlider) window.widgetAPI?.setRefreshInterval(currentInterval)
     const opSlider = document.getElementById('opacitySlider')
     if (opSlider) saveOpacity(opSlider.value)
   }
@@ -826,21 +941,21 @@
     applyOpacity(currentOpacity)
   }
 
-  /* ── 透明度 ───────────────────────────── */
+  /* ── 透明度 ────────────────────────────── */
   function applyOpacity(value) {
     currentOpacity = parseInt(value)
     const alpha = 1 - currentOpacity / 100
     const isLight = document.body.classList.contains('light')
     document.body.style.background = isLight
-      ? `rgba(255,255,255,${alpha.toFixed(2)})`
-      : `rgba(18,18,28,${alpha.toFixed(2)})`
+      ? `rgba(242,242,248,${alpha.toFixed(2)})`
+      : `rgba(13,13,20,${alpha.toFixed(2)})`
   }
 
   function saveOpacity(value) {
     try { window.widgetAPI?.saveOpacity(parseInt(value)) } catch {}
   }
 
-  // 回车键触发登录 / 域名确认
+  /* ── 回车键 ────────────────────────────── */
   document.getElementById('passwordInput')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin()
   })
@@ -851,7 +966,7 @@
     if (e.key === 'Enter') document.getElementById('passwordInput')?.focus()
   })
 
-  // 点击遮罩关闭
+  /* ── 点击遮罩关闭 ────────────────────── */
   document.getElementById('settingsModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) hideSettings()
   })
@@ -860,14 +975,15 @@
   window.addEventListener('widget-refresh', autoRefresh)
   window.addEventListener('widget-show-settings', showSettings)
 
-  // 首次加载
+  /* ── 首次加载 ────────────────────────── */
   ;(async () => {
     const cfg = await window.widgetAPI?.loadConfig()
     currentDomain = cfg?.apiBase || ''
+    currentInterval = Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, cfg?.interval || 1))
     document.getElementById('pinBtn').classList.add('active')
     if (cfg?.theme === 'light') setTheme('light')
     else { try { document.getElementById('themeDark').classList.add('active') } catch {} }
-    applyOpacity(cfg?.opacity || 20)
+    applyOpacity(cfg?.opacity || 80)
     if (cfg?.hasAuth) {
       manualRefresh()
     } else {

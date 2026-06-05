@@ -36,7 +36,8 @@
   * { margin:0; padding:0; box-sizing:border-box; }
 
   html, body {
-    height: 100%;
+    min-height: 100%;
+    height: auto;
   }
 
   body {
@@ -101,8 +102,7 @@
 
   /* ── 可滚动内容区 ── */
   .scroll-area {
-    flex: 1;
-    overflow-y: auto;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
   }
@@ -437,7 +437,7 @@
     font-weight: 500;
   }
 
-  /* ── 底部状态栏（固定在底部）─── */
+  /* ── 底部状态栏 ── */
   .footer {
     flex-shrink: 0;
     display: flex;
@@ -447,7 +447,6 @@
     border-top: 0.5px solid var(--card-border);
     font-size: 10.5px;
     color: var(--text-faded);
-    margin-top: auto;
   }
   .footer .updated { text-align: right; }
 </style>
@@ -586,6 +585,10 @@
   const QUOTA_PER_YUAN = 500000
   const MIN_INTERVAL = 1
   const MAX_INTERVAL = 30
+  const WIN_WIDTH = 260
+  const WIN_MIN_H = 240
+  const WIN_MAX_H = 450
+  let lastWinHeight = 0
 
   /* ── 工具 ────────────────────────────── */
   function extractBalance(data) {
@@ -632,6 +635,18 @@
       .slice(0, 5)
   }
 
+  /* ── 窗口高度自适应 ─────────────────── */
+  function fitWindowHeight() {
+    requestAnimationFrame(() => {
+      const h = document.documentElement.scrollHeight
+      const clamped = Math.max(WIN_MIN_H, Math.min(WIN_MAX_H, h))
+      if (Math.abs(clamped - lastWinHeight) > 4) {
+        lastWinHeight = clamped
+        window.widgetAPI?.resizeWindow(WIN_WIDTH, clamped)
+      }
+    })
+  }
+
   /* ── 渲染 ────────────────────────────── */
   function renderMetrics(balance, todayUsage) {
     document.getElementById('balanceVal').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
@@ -668,11 +683,13 @@
       showError(result.error || '登录已过期')
       document.getElementById('statusText').innerHTML =
         '<span class="status-dot err"></span> 需重新登录'
+      fitWindowHeight()
       return
     }
 
     if (!result || !result.ok) {
       if (result?.error) showError(result.error)
+      fitWindowHeight()
       return
     }
 
@@ -697,6 +714,8 @@
       errBox.style.color = '#FFD54F'
       errBox.style.display = 'block'
     }
+
+    fitWindowHeight()
   }
 
   function showError(msg) {
@@ -705,6 +724,7 @@
     errBox.style.display = 'block'
     document.getElementById('statusText').innerHTML =
       '<span class="status-dot err"></span> 连接失败'
+    fitWindowHeight()
   }
 
   /* ── 刷新 ────────────────────────────── */
@@ -726,6 +746,7 @@
     }
     isRefreshing = false
     btn?.classList.remove('spinning')
+    fitWindowHeight()
   }
 
   async function autoRefresh() {
@@ -885,6 +906,7 @@
     if (_intervalSlider) window.widgetAPI?.setRefreshInterval(currentInterval)
     const opSlider = document.getElementById('opacitySlider')
     if (opSlider) saveOpacity(opSlider.value)
+    fitWindowHeight()
   }
 
   async function doLogin() {
@@ -989,6 +1011,7 @@
     } else {
       setTimeout(showSettings, 300)
     }
+    fitWindowHeight()
   })()
 </script>
 </body>

@@ -226,6 +226,7 @@ function createWindow() {
     height: 320,
     minWidth: 220,
     minHeight: 240,
+    maxHeight: 460,
     alwaysOnTop: true,
     visibleOnAllWorkspaces: true,
     transparent: true,

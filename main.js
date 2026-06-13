@@ -223,7 +223,7 @@ async function fetchAllData(apiBase, auth) {
 function createWindow() {
   win = new BrowserWindow({
     width: 260,
-    height: 320,
+    height: 380,
     minWidth: 220,
     minHeight: 240,
     maxHeight: 460,

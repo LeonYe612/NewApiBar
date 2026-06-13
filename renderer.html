@@ -450,6 +450,56 @@
     color: var(--text-faded);
   }
   .footer .updated { text-align: right; }
+
+  /* ── 极简模式 ── */
+  body.minimal .metrics,
+  body.minimal .divider,
+  body.minimal .section-label { display: none; }
+
+  body.minimal .compact-balance {
+    display: flex;
+    gap: 18px;
+    padding: 8px 12px 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-bottom: 0.5px solid var(--card-border);
+  }
+  body.minimal .compact-balance .cb-val {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  body.minimal .model-list {
+    padding: 6px 12px;
+    gap: 3px;
+  }
+  body.minimal .model-row {
+    background: none;
+    padding: 3px 8px;
+    margin-bottom: 0;
+    border-radius: 4px;
+  }
+  body.minimal .model-row:hover { background: rgba(255,255,255,0.04); }
+  body.minimal .model-bar { display: none; }
+  body.minimal .model-rank {
+    width: 15px; height: 15px;
+    border-radius: 3px;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-faded);
+  }
+  body.minimal .model-rank.r1 { background: #6C9FFF; color: #0D0D14; }
+  body.minimal .model-rank.r2 { background: #5B8AE6; color: #fff; }
+  body.minimal .model-rank.r3 { background: #4A79CC; color: #fff; }
+  body.minimal .model-name { font-size: 11px; }
+  body.minimal .model-cost { color: var(--text-primary); font-size: 11px; }
+
+  body.minimal .footer {
+    padding: 3px 12px 6px;
+    font-size: 10px;
+    border-top: 0.5px solid var(--card-border);
+  }
 </style>
 </head>
 <body>
@@ -477,6 +527,12 @@
       <div class="metric-label">今日消耗</div>
       <div class="metric-value small" id="todayCostVal">—</div>
     </div>
+  </div>
+
+  <!-- 极简模式下的紧凑余额行（默认隐藏） -->
+  <div class="compact-balance" style="display:none;">
+    <span>余额 <span class="cb-val" id="compactBalance">—</span></span>
+    <span>今日 <span class="cb-val" id="compactToday">—</span></span>
   </div>
 
   <div class="divider"></div>
@@ -547,6 +603,12 @@
         <button id="themeLight" onclick="setTheme('light')">☀️ 浅色</button>
       </div>
 
+      <label>显示模式</label>
+      <div class="theme-toggle">
+        <button id="modeFull" onclick="setMode('full')">完整</button>
+        <button id="modeMinimal" onclick="setMode('minimal')">极简</button>
+      </div>
+
       <label>刷新频率</label>
       <div class="slider-wrap">
         <div class="slider-value" id="intervalValue">1 分钟</div>
@@ -582,6 +644,7 @@
   let currentOpacity = 80
   let currentDomain = ''
   let currentInterval = 1   // 分钟，默认 1
+  let minimalMode = false
 
   const QUOTA_PER_YUAN = 500000
   const MIN_INTERVAL = 1
@@ -638,6 +701,8 @@
   function renderMetrics(balance, todayUsage) {
     document.getElementById('balanceVal').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
     document.getElementById('todayCostVal').textContent = todayUsage ? '¥' + todayUsage.cost.toFixed(2) : '—'
+    document.getElementById('compactBalance').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
+    document.getElementById('compactToday').textContent = todayUsage ? '¥' + todayUsage.cost.toFixed(2) : '—'
   }
 
   function renderModelList(models) {
@@ -852,6 +917,11 @@
     const op = cfg.opacity || 80
     document.getElementById('opacitySlider').value = op
     document.getElementById('opacityVal').textContent = op + '%'
+    // 极简模式按钮状态
+    try {
+      document.getElementById('modeFull').classList.toggle('active', !minimalMode)
+      document.getElementById('modeMinimal').classList.toggle('active', minimalMode)
+    } catch {}
   }
 
   function goToDomainStep() {
@@ -943,6 +1013,17 @@
     applyOpacity(currentOpacity)
   }
 
+  /* ── 极简模式 ────────────────────────── */
+  function setMode(mode) {
+    minimalMode = (mode === 'minimal')
+    document.body.classList.toggle('minimal', minimalMode)
+    try {
+      document.getElementById('modeFull').classList.toggle('active', !minimalMode)
+      document.getElementById('modeMinimal').classList.toggle('active', minimalMode)
+    } catch {}
+    window.widgetAPI?.saveMinimalMode(minimalMode)
+  }
+
   /* ── 透明度 ────────────────────────────── */
   function applyOpacity(value) {
     currentOpacity = parseInt(value)
@@ -982,6 +1063,8 @@
     const cfg = await window.widgetAPI?.loadConfig()
     currentDomain = cfg?.apiBase || ''
     currentInterval = Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, cfg?.interval || 1))
+    minimalMode = cfg?.minimalMode || false
+    if (minimalMode) document.body.classList.add('minimal')
     document.getElementById('pinBtn').classList.add('active')
     if (cfg?.theme === 'light') setTheme('light')
     else { try { document.getElementById('themeDark').classList.add('active') } catch {} }

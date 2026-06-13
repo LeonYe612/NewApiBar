@@ -393,7 +393,8 @@ ipcMain.handle('load-config', async () => {
     hasAuth: !!(cfg.cookies || cfg.token),
     interval: cfg.interval || 1,
     theme: cfg.theme || 'dark',
-    opacity: cfg.opacity ?? 80
+    opacity: cfg.opacity ?? 80,
+    minimalMode: cfg.minimalMode || false
   }
 })
 
@@ -450,6 +451,19 @@ ipcMain.handle('save-opacity', (_, opacity) => {
     return { ok: true }
   } catch (e) {
     debugLog(`Opacity save failed: ${e.message}`)
+    return { ok: false, error: e.message }
+  }
+})
+
+ipcMain.handle('save-minimal-mode', (_, mode) => {
+  try {
+    const cfg = loadConfig()
+    cfg.minimalMode = mode
+    saveConfig(cfg)
+    debugLog(`MinimalMode saved: ${mode}`)
+    return { ok: true }
+  } catch (e) {
+    debugLog(`MinimalMode save failed: ${e.message}`)
     return { ok: false, error: e.message }
   }
 })

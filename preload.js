@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('widgetAPI', {
   resizeWindow: (width, height) => ipcRenderer.invoke('resize-window', width, height),
   saveTheme: (theme) => ipcRenderer.invoke('save-theme', theme),
   saveOpacity: (opacity) => ipcRenderer.invoke('save-opacity', opacity),
+  saveMinimalMode: (mode) => ipcRenderer.invoke('save-minimal-mode', mode),
   hide: () => ipcRenderer.send('widget-hide'),
   show: () => ipcRenderer.send('widget-show')
 })

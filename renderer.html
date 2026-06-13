@@ -635,15 +635,19 @@
   }
 
   /* ── 窗口高度自适应 ─────────────────── */
-  function fitWindowHeight() {
-    requestAnimationFrame(() => {
+  let _fitTimer = 0
+  function fitWindowHeight(immediate) {
+    const _fit = () => {
       const h = document.documentElement.scrollHeight
       const clamped = Math.max(WIN_MIN_H, Math.min(WIN_MAX_H, h))
       if (Math.abs(clamped - lastWinHeight) > 4) {
         lastWinHeight = clamped
         window.widgetAPI?.resizeWindow(WIN_WIDTH, clamped)
       }
-    })
+    }
+    if (immediate) return _fit()
+    clearTimeout(_fitTimer)
+    _fitTimer = setTimeout(_fit, 200)
   }
 
   /* ── 渲染 ────────────────────────────── */
@@ -682,13 +686,13 @@
       showError(result.error || '登录已过期')
       document.getElementById('statusText').innerHTML =
         '<span class="status-dot err"></span> 需重新登录'
-      fitWindowHeight()
+      fitWindowHeight(true)
       return
     }
 
     if (!result || !result.ok) {
       if (result?.error) showError(result.error)
-      fitWindowHeight()
+      fitWindowHeight(true)
       return
     }
 
@@ -714,7 +718,7 @@
       errBox.style.display = 'block'
     }
 
-    fitWindowHeight()
+    fitWindowHeight(true)
   }
 
   function showError(msg) {
@@ -723,7 +727,7 @@
     errBox.style.display = 'block'
     document.getElementById('statusText').innerHTML =
       '<span class="status-dot err"></span> 连接失败'
-    fitWindowHeight()
+    fitWindowHeight(true)
   }
 
   /* ── 刷新 ────────────────────────────── */
@@ -745,7 +749,7 @@
     }
     isRefreshing = false
     btn?.classList.remove('spinning')
-    fitWindowHeight()
+    fitWindowHeight(true)
   }
 
   async function autoRefresh() {
@@ -905,7 +909,7 @@
     if (_intervalSlider) window.widgetAPI?.setRefreshInterval(currentInterval)
     const opSlider = document.getElementById('opacitySlider')
     if (opSlider) saveOpacity(opSlider.value)
-    fitWindowHeight()
+    fitWindowHeight(true)
   }
 
   async function doLogin() {
@@ -1010,8 +1014,11 @@
     } else {
       setTimeout(showSettings, 300)
     }
-    fitWindowHeight()
+    fitWindowHeight(true)
   })()
+
+  // 用户拖动窗口边缘后自动收缩留白（debounced 200ms）
+  window.addEventListener('resize', () => fitWindowHeight())
 </script>
 </body>
 </html>

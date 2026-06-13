@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=260">
+<title>NewApiBar - 极简模式预览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0D0D14;
+    --card: #141423;
+    --border: #2E2E47;
+    --accent: #6C9FFF;
+    --ok: #28C840;
+    --text: #E8E8F0;
+    --text-faded: #8888A0;
+  }
+  html, body {
+    min-height: 100%;
+    height: auto;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    font-size: 12px;
+    overflow-x: hidden;
+  }
+
+  /* ── 极简容器 ── */
+  .minimal-container {
+    width: 260px;
+    min-height: 100vh;
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── 顶部状态 ── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-faded);
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+  .status-left { display: flex; align-items: center; gap: 5px; }
+  .updated { font-size: 10px; opacity: 0.6; }
+
+  /* ── 余额行 ── */
+  .balance-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .balance-label { font-size: 11px; color: var(--text-faded); }
+  .balance-val { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+
+  /* ── 今日消耗行 ── */
+  .today-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-faded);
+    padding: 2px 0 6px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .today-val { color: var(--accent); font-weight: 600; font-size: 12px; }
+
+  /* ── 模型列表 ── */
+  .model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .model-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .model-rank {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--card);
+    color: var(--text-faded);
+  }
+  .model-rank.r1 { background: #6C9FFF; color: #0D0D14; }
+  .model-rank.r2 { background: #5B8AE6; color: #fff; }
+  .model-rank.r3 { background: #4A79CC; color: #fff; }
+  .model-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .model-cost {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
+    min-width: 48px;
+    text-align: right;
+  }
+
+  /* ── 空状态 ── */
+  .empty-state {
+    padding: 20px 0;
+    text-align: center;
+    color: var(--text-faded);
+    font-size: 11px;
+  }
+
+  /* ── 底部刷新 ── */
+  .footer {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-faded);
+  }
+  .refresh-btn {
+    background: none;
+    border: 0.5px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-faded);
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  .spinning { animation: spin 0.8s linear infinite; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="minimal-container" id="app">
+
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <div class="status-left">
+      <div class="dot"></div>
+      <span>NewApiBar</span>
+    </div>
+    <span class="updated" id="updatedText">15:54:02</span>
+  </div>
+
+  <!-- 余额 -->
+  <div class="balance-row">
+    <span class="balance-label">余额</span>
+    <span class="balance-val" id="balanceVal">¥62.50</span>
+  </div>
+
+  <!-- 今日消耗 -->
+  <div class="today-row">
+    <span>今日消耗</span>
+    <span class="today-val" id="todayCostVal">¥2.40</span>
+  </div>
+
+  <!-- 模型列表 -->
+  <div class="model-list" id="modelList">
+    <div class="model-item">
+      <span class="model-rank r1">1</span>
+      <div class="model-info">
+        <div class="model-name">deepseek-chat</div>
+        <div class="model-bar"><div class="fill" style="width:100%"></div></div>
+      </div>
+      <span class="model-cost">¥1.20</span>
+    </div>
+    <div class="model-item">
+      <span class="model-rank r2">2</span>
+      <div class="model-info">
+        <div class="model-name">glm-4-plus</div>
+        <div class="model-bar"><div class="fill" style="width:45%"></div></div>
+      </div>
+      <span class="model-cost">¥0.54</span>
+    </div>
+    <div class="model-item">
+      <span class="model-rank r3">3</span>
+      <div class="model-info">
+        <div class="model-name">qwen-max</div>
+        <div class="model-bar"><div class="fill" style="width:28%"></div></div>
+      </div>
+      <span class="model-cost">¥0.34</span>
+    </div>
+    <div class="model-item">
+      <span class="model-rank">4</span>
+      <div class="model-info">
+        <div class="model-name">gemini-pro</div>
+        <div class="model-bar"><div class="fill" style="width:18%"></div></div>
+      </div>
+      <span class="model-cost">¥0.22</span>
+    </div>
+    <div class="model-item">
+      <span class="model-rank">5</span>
+      <div class="model-info">
+        <div class="model-name">claude-3-haiku</div>
+        <div class="model-bar"><div class="fill" style="width:10%"></div></div>
+      </div>
+      <span class="model-cost">¥0.10</span>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div class="footer">
+    <span>260 tokens</span>
+    <button class="refresh-btn" onclick="simulateRefresh()">↻ 刷新</button>
+  </div>
+
+</div>
+
+<script>
+  // 模拟刷新
+  function simulateRefresh() {
+    const btn = document.querySelector('.refresh-btn')
+    btn.classList.add('spinning')
+    setTimeout(() => btn.classList.remove('spinning'), 800)
+    const now = new Date()
+    document.getElementById('updatedText').textContent =
+      now.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+  }
+
+  // 模拟3个模型的数据（不足5个）
+  function show3Models() {
+    const list = document.getElementById('modelList')
+    list.innerHTML = `
+      <div class="model-item">
+        <span class="model-rank r1">1</span>
+        <div class="model-info">
+          <div class="model-name">deepseek-chat</div>
+          <div class="model-bar"><div class="fill" style="width:100%"></div></div>
+        </div>
+        <span class="model-cost">¥1.20</span>
+      </div>
+      <div class="model-item">
+        <span class="model-rank r2">2</span>
+        <div class="model-info">
+          <div class="model-name">glm-4-plus</div>
+          <div class="model-bar"><div class="fill" style="width:45%"></div></div>
+        </div>
+        <span class="model-cost">¥0.54</span>
+      </div>
+      <div class="model-item">
+        <span class="model-rank r3">3</span>
+        <div class="model-info">
+          <div class="model-name">qwen-max</div>
+          <div class="model-bar"><div class="fill" style="width:28%"></div></div>
+        </div>
+        <span class="model-cost">¥0.34</span>
+      </div>`
+    document.getElementById('todayCostVal').textContent = '¥2.08'
+  }
+
+  // 切换演示：按数字键 3/5 切换模型数量
+  document.addEventListener('keydown', e => {
+    if (e.key === '3') { show3Models(); simulateRefresh(); }
+    if (e.key === '5') { location.reload(); }
+  })
+</script>
+
+</body>
+</html>

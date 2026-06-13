@@ -451,15 +451,37 @@
   }
   .footer .updated { text-align: right; }
 
-  /* ── 极简模式 ── */
+  /* ── 极简模式（纯内容，零装饰）── */
+  /* 布局覆写：body 由内容决定高度，scroll-area 不 flex 撑满 */
+  body.minimal {
+    height: auto !important;
+    border: none;
+    border-radius: 12px;
+  }
   body.minimal .metrics,
   body.minimal .divider,
   body.minimal .section-label { display: none; }
 
+  /* ── 标题栏更窄 ── */
+  body.minimal .titlebar {
+    padding: 6px 10px 3px;
+    border-bottom: none;
+  }
+  body.minimal .titlebar .title { font-size: 11px; letter-spacing: 0.3px; }
+
+  /* ── 内容区：不占剩余空间，内容多出才滚动 ── */
+  body.minimal .scroll-area {
+    flex: 0 0 auto;
+    max-height: 380px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  /* ── 余额紧凑行 ── */
   body.minimal .compact-balance {
     display: flex;
-    gap: 18px;
-    padding: 8px 12px 6px;
+    gap: 16px;
+    padding: 3px 10px 7px;
     font-size: 11px;
     color: var(--text-secondary);
     border-bottom: 0.5px solid var(--card-border);
@@ -469,36 +491,58 @@
     color: var(--text-primary);
   }
 
+  /* ── 模型列表 ── */
   body.minimal .model-list {
-    padding: 6px 12px;
-    gap: 3px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
   body.minimal .model-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin: 0;
+    border-radius: 0;
     background: none;
-    padding: 3px 8px;
-    margin-bottom: 0;
-    border-radius: 4px;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
   }
-  body.minimal .model-row:hover { background: rgba(255,255,255,0.04); }
+  body.minimal .model-row:last-child { border-bottom: none; }
+  body.minimal .model-row:hover { background: rgba(255,255,255,0.03); }
+  body.minimal .model-info { flex: 1; min-width: 0; }
   body.minimal .model-bar { display: none; }
   body.minimal .model-rank {
-    width: 15px; height: 15px;
-    border-radius: 3px;
-    font-size: 9px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.06);
+    width: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-faded);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  body.minimal .model-rank.r1 { color: var(--accent); }
+  body.minimal .model-rank.r2 { color: #7AA8FF; opacity: 0.7; }
+  body.minimal .model-rank.r3 { color: #7AA8FF; opacity: 0.4; }
+  body.minimal .model-name { font-size: 12px; font-weight: 500; }
+  body.minimal .model-cost {
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── 状态栏 ── */
+  body.minimal .footer {
+    padding: 5px 10px 7px;
+    font-size: 10px;
+    border-top: none;
     color: var(--text-faded);
   }
-  body.minimal .model-rank.r1 { background: #6C9FFF; color: #0D0D14; }
-  body.minimal .model-rank.r2 { background: #5B8AE6; color: #fff; }
-  body.minimal .model-rank.r3 { background: #4A79CC; color: #fff; }
-  body.minimal .model-name { font-size: 11px; }
-  body.minimal .model-cost { color: var(--text-primary); font-size: 11px; }
+  body.minimal .footer .updated { color: var(--text-faded); }
 
-  body.minimal .footer {
-    padding: 3px 12px 6px;
-    font-size: 10px;
-    border-top: 0.5px solid var(--card-border);
+  body.minimal .error-msg {
+    margin: 4px 10px 6px;
+    border-radius: 6px;
+    padding: 6px 10px;
   }
 </style>
 </head>
@@ -764,6 +808,8 @@
       errBox.style.color = '#FFD54F'
       errBox.style.display = 'block'
     }
+
+    fitMinimalHeight()
   }
 
   function showError(msg) {
@@ -793,6 +839,7 @@
     }
     isRefreshing = false
     btn?.classList.remove('spinning')
+    fitMinimalHeight()
   }
 
   async function autoRefresh() {
@@ -1022,6 +1069,18 @@
       document.getElementById('modeMinimal').classList.toggle('active', minimalMode)
     } catch {}
     window.widgetAPI?.saveMinimalMode(minimalMode)
+    if (minimalMode) requestAnimationFrame(fitMinimalHeight)
+  }
+
+  let _lastMinimalH = 0
+  function fitMinimalHeight() {
+    if (!minimalMode) return
+    requestAnimationFrame(() => {
+      const h = Math.ceil(document.body.scrollHeight)
+      if (Math.abs(h - _lastMinimalH) < 3) return
+      _lastMinimalH = h
+      window.widgetAPI?.resizeWindow(260, h)
+    })
   }
 
   /* ── 透明度 ────────────────────────────── */

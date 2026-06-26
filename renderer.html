@@ -256,6 +256,7 @@ body::before {
   color: var(--t1);
   transition: opacity 0.4s var(--ease-out);
 }
+.today-cost-value { color: var(--green); }
 .stat-value.loading { opacity: 0.3; }
 
 
@@ -667,7 +668,7 @@ body.minimal .status-dot {
 <div class="stats-row">
   <div class="stat-card" style="min-width:0">
     <div class="stat-label">今日消耗</div>
-    <div class="stat-value loading" id="todayCostVal">¥ --</div>
+    <div class="stat-value today-cost-value loading" id="todayCostVal">¥ --</div>
     
   </div>
 </div>
@@ -1107,10 +1108,15 @@ body.minimal .status-dot {
   function fitContent() {
     requestAnimationFrame(() => {
       const h = Math.ceil(document.body.scrollHeight);
-      const w = document.body.classList.contains('minimal') ? 96 : 162;
+      const isMinimal = document.body.classList.contains('minimal');
+      const w = isMinimal ? 96 : null;
       if (Math.abs(h - _lastH) < 2 && w === _lastW) return;
       _lastH = h; _lastW = w;
-      window.widgetAPI?.resizeWindow(w, h);
+      if (isMinimal) {
+        window.widgetAPI?.resizeWindow(96, h);
+      } else {
+        window.widgetAPI?.resizeHeight(h);
+      }
     });
   }
 

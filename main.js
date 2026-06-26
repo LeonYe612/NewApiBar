@@ -222,9 +222,9 @@ async function fetchAllData(apiBase, auth) {
 // ── 创建窗口 ───────────────────────────────────
 function createWindow() {
   win = new BrowserWindow({
-    width: 260,
+    width: 146,
     height: 380,
-    minWidth: 220,
+    minWidth: 140,
     minHeight: 240,
     maxHeight: 460,
     alwaysOnTop: true,
@@ -432,6 +432,14 @@ ipcMain.handle('set-pin', (_, pinned) => {
 
 ipcMain.handle('resize-window', (_, width, height) => {
   if (win) win.setSize(Math.round(width), Math.round(height), false)
+  return { ok: true }
+})
+
+ipcMain.handle('resize-height', (_, height) => {
+  if (win) {
+    const [currentWidth] = win.getSize()
+    win.setSize(currentWidth, Math.round(height), false)
+  }
   return { ok: true }
 })
 

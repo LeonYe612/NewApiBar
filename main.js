@@ -205,7 +205,7 @@ async function fetchAllData(apiBase, auth) {
   const bjTodayEnd = bjTodayStart + 86399
   const logBase = `/api/log/self?start_timestamp=${bjTodayStart}&end_timestamp=${bjTodayEnd}`;
   try { results.logs = await fetchAllLogPages(apiBase, logBase, cookies, user) } catch (e) { errors.logs = e.message }
-  try { results.status = await apiGet(apiBase, '/api/status', '', '') } catch (e) { errors.status = e.message }
+  try { results.apiStatus = await apiGet(apiBase, '/api/status', '', '') } catch (e) { errors.status = e.message }
 
   if (results.userInfo?.status === 401 || results.logs?.status === 401) {
     debugLog('fetchAllData: 401 detected, cookie likely expired')

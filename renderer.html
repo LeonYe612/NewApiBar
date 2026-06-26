@@ -5,1136 +5,1172 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NewApiBar</title>
 <style>
-  :root {
-    --bg: #0D0D14;
-    --card-bg: #141423;
-    --card-border: #2E2E47;
-    --text-primary: #F2F2F8;
-    --text-secondary: #9393A6;
-    --text-faded: #555555;
-    --accent: #6C9FFF;
-    --accent-dim: rgba(108,159,255,0.15);
-    --ok: #28C840;
-    --err: #FF5F57;
-    --err-dim: rgba(255,95,87,0.12);
-    --modal-bg: rgba(20,20,40,0.97);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
-  }
-  body.light {
-    --bg: #F2F2F8;
-    --card-bg: #FFFFFF;
-    --card-border: #E0E0E8;
-    --text-primary: #1A1A2E;
-    --text-secondary: #555555;
-    --text-faded: #999999;
-    --accent: #4A7AEA;
-    --accent-dim: rgba(74,122,234,0.12);
-    --modal-bg: rgba(255,255,255,0.96);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-  }
+/* ═══════════════════════════════════════════════════════════════
+   NEWAPIBAR v2 - Complete UI Redesign
+   Design: "Mission Control" - Dark, precise, alive
+   ═══════════════════════════════════════════════════════════════ */
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+/* ── Design Tokens ── */
+:root {
+  /* Surfaces - 5-tier depth system */
+  --s0: #06080d;
+  --s1: #0c1018;
+  --s2: #12161f;
+  --s3: #1a1f2b;
+  --s4: #232a38;
 
-  html, body {
-    height: 100%;
-  }
+  /* Glass */
+  --glass: rgba(14, 18, 28, 0.82);
+  --glass-edge: rgba(255,255,255,0.05);
+  --glass-edge-hover: rgba(255,255,255,0.10);
+  --glass-inner: rgba(255,255,255,0.02);
 
-  body {
-    font-family: -apple-system, 'Noto Sans SC', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text-primary);
-    border-radius: 16px;
-    overflow: hidden;
-    user-select: none;
-    border: 0.5px solid var(--card-border);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-  }
+  /* Text */
+  --t1: #edf0f7;
+  --t2: #8892a8;
+  --t3: #4e5568;
+  --t4: #2d3342;
 
-  /* ── 标题栏 ── */
-  .titlebar {
-    -webkit-app-region: drag;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px 4px;
-    border-bottom: 0.5px solid var(--card-border);
-    flex-shrink: 0;
-  }
-  .titlebar .title {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.5px;
-  }
-  .titlebar .controls {
-    -webkit-app-region: no-drag;
-    display: flex;
-    gap: 6px;
-  }
-  .btn {
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.06);
-    color: var(--text-faded);
-    transition: all 0.18s ease;
-    line-height: 1;
-    position: relative;
-  }
-  .btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); transform: scale(1.08); }
-  .btn.pin.active { background: var(--accent); color: #fff; }
-  .btn.close:hover { background: var(--err); color: #fff; }
-  .btn.refresh:hover { background: var(--ok); color: #fff; }
-  .btn.refresh.spinning {
-    background: rgba(40,200,64,0.25);
-    color: var(--ok);
-    pointer-events: none;
-    animation: spinBtn 0.7s linear infinite;
-  }
-  @keyframes spinBtn { to { transform: rotate(360deg); } }
-  .btn.settings:hover { background: var(--accent); color: #fff; }
+  /* Accent - Indigo-violet spectrum */
+  --accent: #7c8cf8;
+  --accent-h: #95a3ff;
+  --accent-dim: rgba(124,140,248,0.12);
+  --accent-glow: rgba(124,140,248,0.25);
+  --accent-gradient: linear-gradient(135deg, #7c8cf8 0%, #a78bfa 100%);
 
-  /* ── 内容区（自动填充剩余空间，overflow 滚动）── */
-  .scroll-area {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .scroll-area::-webkit-scrollbar { width: 3px; }
-  .scroll-area::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.20); border-radius: 2px; }
+  /* Semantic */
+  --green: #3dd68c;
+  --green-dim: rgba(61,214,140,0.10);
+  --amber: #f5b731;
+  --amber-dim: rgba(245,183,49,0.10);
+  --red: #f06868;
+  --red-dim: rgba(240,104,104,0.10);
+  --gold: #f5b731;
+  --silver: #94a3b8;
+  --bronze: #d97706;
 
-  /* ── 核心指标区 ── */
-  .metrics {
-    display: flex;
-    gap: 8px;
-    padding: 10px 12px 4px;
-  }
-  .metric-card {
-    flex: 1;
-    background: var(--card-bg);
-    border: 0.5px solid var(--card-border);
-    border-radius: 10px;
-    padding: 8px 10px;
-    transition: background 0.15s;
-  }
-  .metric-card:hover { background: rgba(255,255,255,0.04); }
-  .metric-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
-  }
-  .metric-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.3px;
-  }
-  .metric-value.small { font-size: 15px; }
+  /* Typography */
+  --font: 'SF Pro Display', -apple-system, 'Noto Sans SC', system-ui, sans-serif;
+  --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', monospace;
+  --tabular: 'SF Mono', 'JetBrains Mono', tabular-nums;
 
-  /* ── 分隔线 ── */
-  .divider {
-    height: 0.5px;
-    background: var(--card-border);
-    margin: 6px 12px;
-  }
+  /* Spacing & Shape */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
 
-  /* ── 模型列表 ── */
-  .section-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    color: var(--text-faded);
-    letter-spacing: 0.3px;
-    padding: 0 12px;
-    margin-bottom: 4px;
-  }
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration: 0.2s;
+  --duration-slow: 0.35s;
+}
 
-  .model-list {
-    padding: 0 12px 6px;
-  }
-  .model-row {
-    display: flex;
-    align-items: center;
-    padding: 5px 8px;
-    border-radius: 7px;
-    margin-bottom: 2px;
-    background: rgba(255,255,255,0.02);
-    transition: background 0.15s;
-  }
-  .model-row:hover { background: rgba(255,255,255,0.06); }
-  .model-rank {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-faded);
-    width: 16px;
-    flex-shrink: 0;
-  }
-  .model-rank.r1 { color: #FFD700; }
-  .model-rank.r2 { color: #C0C0C0; }
-  .model-rank.r3 { color: #CD7F32; }
-  body.light .model-rank.r3 { color: #B87333; }
-  .model-info { flex: 1; min-width: 0; }
-  .model-name {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .model-cost {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-    margin-left: 8px;
-  }
-  .model-bar {
-    height: 3px;
-    border-radius: 2px;
-    background: var(--accent-dim);
-    margin-top: 5px;
-    overflow: hidden;
-  }
-  .model-bar .fill {
-    height: 100%;
-    border-radius: 2px;
-    background: var(--accent);
-    transition: width 0.5s ease;
-  }
+/* ── Light Theme Override ── */
+body.light {
+  --s0: #eef0f5;
+  --s1: #f4f5fa;
+  --s2: #fafafd;
+  --s3: #ffffff;
+  --s4: #ffffff;
+  --glass: rgba(255,255,255,0.88);
+  --glass-edge: rgba(0,0,0,0.06);
+  --glass-edge-hover: rgba(0,0,0,0.10);
+  --glass-inner: rgba(0,0,0,0.02);
+  --t1: #141825;
+  --t2: #5a6178;
+  --t3: #8f95ad;
+  --t4: #c5c9d8;
+  --accent: #6366f1;
+  --accent-h: #818cf8;
+  --accent-dim: rgba(99,102,241,0.08);
+  --accent-glow: rgba(99,102,241,0.15);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.08);
+}
 
-  /* ── 状态指示 ── */
-  .status-dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .status-dot.ok      { background: var(--ok); box-shadow: 0 0 6px rgba(40,200,64,0.5); }
-  .status-dot.warn    { background: #FFBD2E; box-shadow: 0 0 6px rgba(255,189,46,0.5); }
-  .status-dot.err     { background: var(--err); box-shadow: 0 0 6px rgba(255,95,87,0.5); }
-  .status-dot.unknown { background: rgba(128,128,128,0.30); }
-  .status-dot.pulsing { animation: pulseDot 1.2s ease-in-out infinite; }
-  @keyframes pulseDot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.75); }
-  }
+/* ── Reset ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { height:100%; }
 
-  /* ── 加载 / 错误 ── */
-  .loading {
-    text-align: center;
-    padding: 18px 0;
-    color: var(--text-faded);
-    font-size: 12px;
-  }
-  .loading .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(128,128,128,0.12);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+body {
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--t1);
+  background: var(--s0);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  flex-direction: column;
+  height: min-content;
+  min-height: 0;
+  transition: background var(--duration-slow) var(--ease-out);
+  line-height: 1.4;
+}
 
-  .error-msg {
-    background: var(--err-dim);
-    border: 0.5px solid rgba(255,95,87,0.25);
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 11px;
-    color: #FF8A80;
-    margin: 8px 12px;
-    line-height: 1.5;
-  }
+/* Subtle noise texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset:0; border-radius: var(--r-xl);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
+  pointer-events: none; z-index:0;
+}
 
-  /* ── 设置弹窗 ── */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.50);
-    z-index: 100;
-    -webkit-app-region: no-drag;
-    animation: fadeIn 0.15s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal-overlay.open { display: flex; align-items: center; justify-content: center; }
-  .modal {
-    background: var(--modal-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 0.5px solid var(--card-border);
-    border-radius: 12px;
-    padding: 14px;
-    width: 230px;
-    max-width: calc(100vw - 32px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.30);
-  }
-  body.light .modal { box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
-  .modal h3 {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 10px;
-  }
-  .modal label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    display: block;
-    margin-bottom: 3px;
-    font-weight: 500;
-  }
-  .modal input[type="text"],
-  .modal input[type="password"],
-  .modal input[type="url"] {
-    width: 100%;
-    background: rgba(255,255,255,0.06);
-    border: 0.5px solid var(--card-border);
-    border-radius: 6px;
-    padding: 6px 8px;
-    color: var(--text-primary);
-    font-size: 12px;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.15s;
-    margin-bottom: 8px;
-  }
-  .modal input:focus { border-color: var(--accent); }
-  .modal input::placeholder { color: var(--text-faded); }
+/* ══════════════════════════════════════════
+   COMPONENT: Title Bar
+   ══════════════════════════════════════════ */
+.titlebar {
+  -webkit-app-region: drag;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 6px 1px;
+  flex-shrink: 0;
+  position: relative; z-index: 10;
+}
+.titlebar-left { display: flex; align-items: center; gap: 4px; }
+.app-icon {
+  width: 12px; height: 12px; border-radius: 3px;
+  background: var(--accent-gradient);
+  font-size: 6px; font-weight: 800; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 8px var(--accent-glow), 0 1px 2px rgba(0,0,0,0.3);
+}
+.app-name {
+  font-size: 8px; font-weight: 600; color: var(--t3);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
 
-  /* 主题切换按钮 */
-  .theme-toggle {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  .theme-toggle button {
-    flex: 1;
-    padding: 5px;
-    border-radius: 6px;
-    border: 0.5px solid var(--card-border);
-    cursor: pointer;
-    font-size: 10.5px;
-    font-weight: 600;
-    background: rgba(255,255,255,0.06);
-    color: var(--text-faded);
-    transition: all 0.15s;
-  }
-  .theme-toggle button.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
+.titlebar-controls {
+  -webkit-app-region: no-drag;
+  display: flex; gap: 1px; align-items: center;
+}
+.ctrl-btn {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: none; cursor: pointer;
+  background: transparent; color: var(--t3);
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--duration) var(--ease-out);
+  flex-shrink: 0;
+}
+.ctrl-btn:hover { background: var(--glass-inner); color: var(--t2); }
+.ctrl-btn:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.ctrl-btn:active { transform: scale(0.92); }
+.ctrl-btn.pin-btn.active { color: var(--accent); background: var(--accent-dim); }
+.ctrl-btn.refresh-btn.spinning { color: var(--green); background: var(--green-dim); pointer-events:none; }
+.ctrl-btn.refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
+.ctrl-btn.settings-btn:hover { color: var(--accent); background: var(--accent-dim); }
+.ctrl-btn.hide-btn:hover { color: var(--red); background: var(--red-dim); }
 
-  /* 自定义滑块：1–30 分钟 */
-  .slider-wrap {
-    margin-bottom: 10px;
-  }
-  .slider-track {
-    position: relative;
-    width: 100%;
-    height: 6px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 3px;
-    cursor: pointer;
-    margin: 8px 0 4px;
-  }
-  .slider-fill {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    background: var(--accent);
-    border-radius: 3px;
-    pointer-events: none;
-  }
-  .slider-thumb {
-    position: absolute;
-    top: 50%;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 2px solid var(--bg);
-    transform: translate(-50%, -50%);
-    cursor: grab;
-    z-index: 2;
-    transition: box-shadow 0.15s;
-  }
-  .slider-thumb:active { cursor: grabbing; box-shadow: 0 0 0 4px var(--accent-dim); }
-  .slider-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: var(--text-faded);
-  }
-  .slider-value {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-    text-align: center;
-    margin-bottom: 2px;
-  }
+/* ══════════════════════════════════════════
+   COMPONENT: Balance Hero Card
+   ══════════════════════════════════════════ */
+.hero-section {
+  flex-shrink: 0;
+  padding: 2px 6px 2px;
+  position: relative; z-index: 1;
+}
+.balance-card {
+  position: relative;
+  padding: 5px 8px 4px;
+  border-radius: 7px;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid var(--glass-edge);
+  overflow: hidden;
+  transition: border-color var(--duration) var(--ease-out);
+}
+.balance-card:hover { border-color: var(--glass-edge-hover); }
 
-  .modal-btns {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    margin-top: 4px;
-  }
-  .modal-btns button {
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: none;
-    font-size: 10.5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s;
-  }
-  .btn-cancel {
-    background: rgba(255,255,255,0.06);
-    color: var(--text-faded);
-  }
-  .btn-cancel:hover { background: rgba(255,255,255,0.12); }
-  .btn-save {
-    background: var(--accent);
-    color: #fff;
-  }
-  .btn-save:hover { opacity: 0.88; }
+/* Decorative glow blob */
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  opacity: 0.07;
+  filter: blur(24px);
+  pointer-events: none;
+}
 
-  .step-indicator {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 10px;
-    align-items: center;
-    justify-content: center;
-  }
-  .step-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--card-border);
-    transition: all 0.25s;
-  }
-  .step-dot.active { background: var(--accent); width: 22px; border-radius: 3px; }
-  .step-dot.done   { background: var(--accent); opacity: 0.6; }
+.balance-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1px;
+}
+.balance-label {
+  font-size: 8px; font-weight: 600;
+  color: var(--t3); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.balance-change {
+  font-size: 9px; font-weight: 500; color: var(--t3);
+  display: flex; align-items: center; gap: 2px;
+}
 
-  .domain-display {
-    font-size: 10.5px;
-    color: var(--accent);
-    background: var(--accent-dim);
-    padding: 4px 8px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    word-break: break-all;
-    line-height: 1.5;
-    font-weight: 500;
-  }
+.balance-amount {
+  font-size: 20px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em; line-height: 1.05;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: opacity 0.4s var(--ease-out);
+}
+.balance-amount.loading { opacity: 0.3; }
 
-  /* ── 底部状态栏 ── */
-  .footer {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 5px 12px 8px;
-    border-top: 0.5px solid var(--card-border);
-    font-size: 10.5px;
-    color: var(--text-faded);
-  }
-  .footer .updated { text-align: right; }
+/* ══════════════════════════════════════════
+   COMPONENT: Stats Grid (Today)
+   ══════════════════════════════════════════ */
+.stats-row {
+  display: flex; gap: 3px;
+  padding: 0 6px 2px;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.stat-card {
+  flex: 1;
+  padding: 4px 6px 3px;
+  border-radius: var(--r-sm);
+  background: var(--glass);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-edge);
+  transition: border-color var(--duration) var(--ease-out);
+}
+.stat-card:hover { border-color: var(--glass-edge-hover); }
 
-  /* ── 极简模式（纯内容，零装饰）── */
-  /* 布局覆写：body 由内容决定高度，scroll-area 不 flex 撑满 */
-  body.minimal {
-    height: auto !important;
-    border: none;
-    border-radius: 12px;
-  }
-  body.minimal .metrics,
-  body.minimal .divider,
-  body.minimal .section-label { display: none; }
+.stat-label {
+  font-size: 8px; font-weight: 600; color: var(--t3);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  margin-bottom: 1px;
+}
+.stat-value {
+  font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em; line-height: 1.15;
+  color: var(--t1);
+  transition: opacity 0.4s var(--ease-out);
+}
+.stat-value.loading { opacity: 0.3; }
 
-  /* ── 标题栏更窄 ── */
-  body.minimal .titlebar {
-    padding: 6px 10px 3px;
-    border-bottom: none;
-  }
-  body.minimal .titlebar .title { font-size: 11px; letter-spacing: 0.3px; }
 
-  /* ── 内容区：不占剩余空间，内容多出才滚动 ── */
-  body.minimal .scroll-area {
-    flex: 0 0 auto;
-    max-height: 380px;
-    overflow-y: auto;
-    min-height: 0;
-  }
+/* ══════════════════════════════════════════
+   COMPONENT: Section Divider
+   ══════════════════════════════════════════ */
+.section-divider {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 6px 0;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.section-label {
+  font-size: 6px; font-weight: 700; color: var(--t3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.section-line { flex:1; height:1px; background: var(--glass-edge); }
 
-  /* ── 余额紧凑行 ── */
-  body.minimal .compact-balance {
-    display: flex;
-    gap: 16px;
-    padding: 3px 10px 7px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    border-bottom: 0.5px solid var(--card-border);
-  }
-  body.minimal .compact-balance .cb-val {
-    font-weight: 700;
-    color: var(--text-primary);
-  }
+/* ══════════════════════════════════════════
+   COMPONENT: Model List
+   ══════════════════════════════════════════ */
+.model-list {
+  padding: 1px 3px 2px;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative; z-index: 1;
+}
+.model-list::-webkit-scrollbar { width:2px; }
+.model-list::-webkit-scrollbar-track { background: transparent; }
+.model-list::-webkit-scrollbar-thumb { background: rgba(128,140,180,0.1); border-radius:2px; }
 
-  /* ── 模型列表 ── */
-  body.minimal .model-list {
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  body.minimal .model-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    margin: 0;
-    border-radius: 0;
-    background: none;
-    border-bottom: 0.5px solid rgba(255,255,255,0.04);
-  }
-  body.minimal .model-row:last-child { border-bottom: none; }
-  body.minimal .model-row:hover { background: rgba(255,255,255,0.03); }
-  body.minimal .model-info { flex: 1; min-width: 0; }
-  body.minimal .model-bar { display: none; }
-  body.minimal .model-rank {
-    width: 16px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-faded);
-    text-align: center;
-    flex-shrink: 0;
-  }
-  body.minimal .model-rank.r1 { color: var(--accent); }
-  body.minimal .model-rank.r2 { color: #7AA8FF; opacity: 0.7; }
-  body.minimal .model-rank.r3 { color: #7AA8FF; opacity: 0.4; }
-  body.minimal .model-name { font-size: 12px; font-weight: 500; }
-  body.minimal .model-cost {
-    color: var(--text-primary);
-    font-size: 12px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
+.model-item {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 3px;
+  border-radius: 5px;
+  transition: background 0.1s var(--ease-out);
+  cursor: default;
+}
+.model-item:hover { background: var(--glass-inner); }
 
-  /* ── 状态栏 ── */
-  body.minimal .footer {
-    padding: 5px 10px 7px;
-    font-size: 10px;
-    border-top: none;
-    color: var(--text-faded);
-  }
-  body.minimal .footer .updated { color: var(--text-faded); }
+.model-rank {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 700;
+  color: var(--t4);
+  background: var(--glass-inner);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.model-item.rank-1 .model-rank { background: rgba(245,183,49,0.14); color: var(--gold); }
+.model-item.rank-2 .model-rank { background: rgba(148,163,184,0.10); color: var(--silver); }
+.model-item.rank-3 .model-rank { background: rgba(217,119,6,0.10); color: var(--bronze); }
 
-  body.minimal .error-msg {
-    margin: 4px 10px 6px;
-    border-radius: 6px;
-    padding: 6px 10px;
+.model-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:0; }
+.model-name {
+  font-size: 9px; font-weight: 500; color: var(--t1);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  line-height: 1.2;
+}
+.model-bar {
+  height: 2px; border-radius: 1px;
+  background: var(--s3);
+  overflow: hidden;
+}
+.model-bar-fill {
+  height: 100%; border-radius: 1px;
+  background: var(--accent-gradient);
+  opacity: 0.5;
+  transition: width 0.6s var(--ease-out);
+}
+
+.model-cost {
+  font-size: 9px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--t2);
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════════
+   COMPONENT: Footer
+   ══════════════════════════════════════════ */
+.footer {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 6px;
+  font-size: 6px; color: var(--t3);
+  position: relative; z-index: 10;
+  border-top: 1px solid var(--glass-edge);
+}
+.footer-left { display: flex; align-items: center; gap: 4px; }
+.footer-right { font-variant-numeric: var(--tabular); }
+
+.status-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.3s var(--ease-out);
+}
+.status-dot.online { background: var(--green); box-shadow: 0 0 6px rgba(61,214,140,0.4); }
+.status-dot.warning { background: var(--amber); box-shadow: 0 0 6px rgba(245,183,49,0.3); animation: pulse 2s ease infinite; }
+.status-dot.offline { background: var(--red); box-shadow: 0 0 6px rgba(240,104,104,0.35); }
+.status-dot.idle { background: var(--t4); }
+.status-dot.fetching { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); animation: pulse 1s ease infinite; }
+
+/* ══════════════════════════════════════════
+   COMPONENT: Settings Overlay
+   ══════════════════════════════════════════ */
+.settings-overlay {
+  position: fixed; inset:0; z-index: 100;
+  display: none; align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,0);
+  transition: background var(--duration) var(--ease-out);
+}
+.settings-overlay.open {
+  display: flex;
+  background: rgba(0,0,0,0.55);
+  animation: fadeIn 0.2s var(--ease-out);
+}
+.settings-panel {
+  width: 100%; max-height: 92%;
+  background: var(--s2);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.4);
+  overflow-y: auto;
+  animation: slideUp 0.35s var(--ease-spring);
+}
+.settings-panel::-webkit-scrollbar { width:2px; }
+.settings-panel::-webkit-scrollbar-thumb { background: rgba(128,140,180,0.12); border-radius:2px; }
+.settings-inner { padding: 18px 14px 14px; }
+
+.settings-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.settings-title { font-size: 16px; font-weight: 700; color: var(--t1); }
+.settings-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: var(--glass-inner); color: var(--t3); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--duration) var(--ease-out);
+}
+.settings-close:hover { background: var(--red-dim); color: var(--red); }
+
+/* Step indicator */
+.step-indicator {
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px; margin-bottom: 14px;
+}
+.step-dot {
+  width: 20px; height: 3px; border-radius: 2px;
+  background: var(--s3); transition: all 0.3s var(--ease-out);
+}
+.step-dot.active { background: var(--accent); width: 26px; box-shadow: 0 0 6px var(--accent-glow); }
+.step-dot.done { background: var(--accent); opacity: 0.3; }
+
+/* Forms */
+.form-group { margin-bottom: 12px; }
+.form-label {
+  display: block; font-size: 9px; font-weight: 600;
+  color: var(--t2); letter-spacing: 0.05em; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.form-input {
+  width: 100%; padding: 8px 12px;
+  background: var(--s1); border: 1px solid var(--glass-edge);
+  border-radius: var(--r-sm); color: var(--t1);
+  font-size: 12px; font-family: var(--font);
+  outline: none; transition: all var(--duration) var(--ease-out);
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.form-input::placeholder { color: var(--t3); }
+.form-hint { display: block; font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 14px; border-radius: var(--r-sm); border: none;
+  font-size: 11px; font-weight: 600; font-family: var(--font);
+  cursor: pointer; transition: all var(--duration) var(--ease-out);
+}
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent-gradient); color: #fff; }
+.btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
+.btn-secondary { background: var(--s3); color: var(--t2); }
+.btn-secondary:hover { background: var(--s4); color: var(--t1); }
+.btn-danger { background: var(--red-dim); color: var(--red); }
+.btn-danger:hover { background: var(--red); color: #fff; }
+
+.btn-row { display: flex; gap: 6px; margin-top: 14px; }
+.btn-row.right { justify-content: flex-end; }
+.btn-row.between { justify-content: space-between; }
+
+/* Toggle group */
+.toggle-group {
+  display: flex; gap: 2px;
+  background: var(--s1); border-radius: var(--r-sm); padding: 2px;
+}
+.toggle-opt {
+  flex: 1; padding: 5px 10px; border: none; border-radius: var(--r-xs);
+  cursor: pointer; font-size: 11px; font-weight: 500; font-family: var(--font);
+  transition: all var(--duration) var(--ease-out);
+  background: transparent; color: var(--t3);
+}
+.toggle-opt.active {
+  background: var(--s3); color: var(--t1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Opacity / Range */
+.range-ctl { display: flex; gap: 8px; align-items: center; }
+.range-ctl input[type="range"] {
+  flex: 1; accent-color: var(--accent); height: 3px;
+}
+.range-val {
+  font-size: 11px; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--t1);
+  min-width: 32px; text-align: right;
+}
+
+/* Domain / user badges */
+.domain-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--accent-dim); color: var(--accent);
+  font-size: 10px; font-weight: 500;
+  padding: 4px 10px; border-radius: 20px;
+  margin-bottom: 14px;
+  max-width: 100%; overflow: hidden;
+}
+.domain-badge span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-badge { font-size: 11px; color: var(--t2); margin-bottom: 14px; }
+.user-badge strong { color: var(--accent); }
+
+/* Error */
+.error-line {
+  background: var(--red-dim); border: 1px solid rgba(240,104,104,0.12);
+  border-radius: var(--r-sm); padding: 5px 10px;
+  margin: 0 6px 4px; font-size: 10px; color: var(--red); line-height: 1.3;
+}
+
+/* State messages */
+.state-msg {
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px 12px; gap: 6px;
+  font-size: 11px; color: var(--t3);
+}
+.spinner-ring {
+  width: 14px; height: 14px;
+  border: 2px solid var(--glass-edge);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINIMAL MODE - "Pure Data" Style
+   ONLY shows: balance + today's consumption.
+   Everything else is hidden or extremely simplified.
+   ═══════════════════════════════════════════════════════════════ */
+body.minimal {
+  height: auto !important;
+  border-radius: var(--r-md);
+  text-align: center;
+  padding-top: 2px;
+}
+
+/* Titlebar: tiny strip, right-aligned controls only */
+body.minimal .titlebar {
+  padding: 1px 4px;
+  justify-content: flex-end;
+  -webkit-app-region: drag;
+}
+body.minimal .titlebar-left { display: none; }
+body.minimal .titlebar-controls {
+  -webkit-app-region: no-drag;
+  gap: 1px;
+}
+body.minimal .ctrl-btn {
+  width: 12px; height: 12px;
+  border-radius: 2px;
+}
+body.minimal .ctrl-btn svg { width: 6px; height: 6px; }
+
+/* Pin: visible but small in minimal */
+body.minimal .pin-btn { display: flex; }
+
+/* Balance: pure hero, no card, no chrome */
+body.minimal .hero-section { padding: 1px 3px 0; }
+body.minimal .balance-card {
+  padding: 1px 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+body.minimal .balance-card::before { display: none; }
+body.minimal .balance-header {
+  margin-bottom: 0;
+  justify-content: center;
+}
+body.minimal .balance-label {
+  font-size: 7px;
+  color: var(--t3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.minimal .balance-change { display: none; }
+body.minimal .balance-amount {
+  font-size: 18px;
+  display: block;
+  text-align: center;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+/* Stats: single compact line, centered */
+body.minimal .stats-row {
+  padding: 0 3px 1px;
+  justify-content: center;
+}
+body.minimal .stat-card {
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+body.minimal .stat-label { display: block !important; font-size: 7px; color: var(--t3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0px; }
+body.minimal .stat-value { display: block !important; font-size: 11px; font-weight: 600; color: var(--t2); margin-top: 0; line-height: 1.3; }
+
+
+/* Hide divider + model list entirely */
+body.minimal .section-divider { display: none; }
+body.minimal .model-list { display: none; }
+
+/* Footer: tiny status dot + time, no border */
+body.minimal .footer {
+  padding: 1px 3px 2px;
+  border-top: none;
+  font-size: 6px;
+  gap: 4px;
+  justify-content: center;
+}
+body.minimal .footer-left { gap: 3px; }
+body.minimal .status-dot {
+  width: 4px; height: 4px;
+}
+
+/* ══════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════ */
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
+}
+
+.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
 </style>
 </head>
 <body>
 
-<!-- 标题栏 -->
+<!-- ═══════ TITLE BAR ═══════ -->
 <div class="titlebar">
-  <span class="title">NewApiBar</span>
-  <div class="controls">
-    <button class="btn pin" id="pinBtn" onclick="togglePin()" title="在所有桌面显示">📌</button>
-    <button class="btn settings" onclick="showSettings()" title="设置">⚙</button>
-    <button class="btn refresh" onclick="manualRefresh()" title="刷新">↻</button>
-    <button class="btn close" onclick="window.widgetAPI?.hide()" title="隐藏">−</button>
+  <div class="titlebar-left">
+    <div class="app-icon">N</div>
+    <span class="app-name">NewApiBar</span>
+  </div>
+  <div class="titlebar-controls">
+    <button class="ctrl-btn pin-btn active" id="pinBtn" onclick="togglePin()" title="置顶" aria-label="切换置顶">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+    </button>
+    <button class="ctrl-btn settings-btn" onclick="showSettings()" title="设置" aria-label="设置">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="ctrl-btn refresh-btn" onclick="manualRefresh()" title="刷新" aria-label="刷新">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+    <button class="ctrl-btn hide-btn" onclick="window.widgetAPI?.hide()" title="隐藏" aria-label="隐藏">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
   </div>
 </div>
 
-<!-- 可滚动内容 -->
-<div class="scroll-area">
-  <!-- 核心指标 -->
-  <div class="metrics">
-    <div class="metric-card">
-      <div class="metric-label">余额</div>
-      <div class="metric-value" id="balanceVal">—</div>
+<!-- ═══════ HERO - Balance ═══════ -->
+<div class="hero-section">
+  <div class="balance-card">
+    <div class="balance-header">
+      <span class="balance-label">账户余额</span>
+      <span class="balance-change" id="balanceChange"></span>
     </div>
-    <div class="metric-card">
-      <div class="metric-label">今日消耗</div>
-      <div class="metric-value small" id="todayCostVal">—</div>
-    </div>
+    <div class="balance-amount loading" id="balanceVal">¥ --</div>
   </div>
-
-  <!-- 极简模式下的紧凑余额行（默认隐藏） -->
-  <div class="compact-balance" style="display:none;">
-    <span>余额 <span class="cb-val" id="compactBalance">—</span></span>
-    <span>今日 <span class="cb-val" id="compactToday">—</span></span>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- 模型 Top5 -->
-  <div class="section-label" id="modelSectionLabel">今日模型消耗 Top 5</div>
-  <div class="model-list" id="modelList">
-    <div class="loading">
-      <div class="spinner"></div>
-      正在连接…
-    </div>
-  </div>
-
-  <div class="error-msg" id="errorBox" style="display:none;"></div>
 </div>
 
-<!-- 底部状态栏（margin-top:auto 使其固定在底部） -->
+<!-- ═══════ STATS - Today ═══════ -->
+<div class="stats-row">
+  <div class="stat-card" style="min-width:0">
+    <div class="stat-label">今日消耗</div>
+    <div class="stat-value loading" id="todayCostVal">¥ --</div>
+    
+  </div>
+</div>
+
+<!-- ═══════ MODEL RANKING ═══════ -->
+<div class="section-divider">
+  <span class="section-label" id="rankLabel">模型排行</span>
+  <span class="section-line"></span>
+</div>
+<div class="model-list" id="modelList">
+  <div class="state-msg"><div class="spinner-ring"></div> 正在连接…</div>
+</div>
+<div class="error-line" id="errorBox" style="display:none"></div>
+
+<!-- ═══════ FOOTER ═══════ -->
 <div class="footer">
-  <span id="statusText"><span class="status-dot unknown"></span> 等待中</span>
-  <span class="updated" id="updatedText">—</span>
+  <div class="footer-left">
+    <span class="status-dot idle" id="statusDot"></span>
+    <span id="statusText">等待中</span>
+  </div>
+  <span class="footer-right" id="updatedText">-</span>
 </div>
 
-<!-- 设置弹窗 -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal" id="modalContent">
-    <!-- 第一步：域名输入 -->
-    <div id="domainStep">
-      <h3>🔗 第一步：API 地址</h3>
-      <label>New API 网站域名</label>
-      <input type="url" id="domainInput" placeholder="https://api.example.com" />
-      <div class="error-msg" id="domainError" style="display:none;margin:0 0 8px;"></div>
-      <div class="modal-btns">
-        <button class="btn-cancel" onclick="hideSettings()">取消</button>
-        <button class="btn-save" onclick="saveDomainAndNext()">下一步</button>
-      </div>
-    </div>
+<!-- ═══════ SETTINGS OVERLAY ═══════ -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <div class="settings-inner">
 
-    <!-- 第二步：账号密码 -->
-    <div id="loginStep" style="display:none;">
-      <div class="step-indicator">
-        <span class="step-dot done" id="stepDot1"></span>
-        <span class="step-dot active" id="stepDot2"></span>
-      </div>
-      <h3>🔑 第二步：登录</h3>
-      <div class="domain-display" id="domainDisplay"></div>
-      <label>用户名</label>
-      <input type="text" id="usernameInput" placeholder="请输入用户名" />
-      <label>密码</label>
-      <input type="password" id="passwordInput" placeholder="请输入密码" />
-      <div class="error-msg" id="loginError" style="display:none;margin:0 0 8px;"></div>
-      <div class="modal-btns">
-        <button class="btn-cancel" onclick="goToDomainStep()">上一步</button>
-        <button class="btn-save" onclick="doLogin()">登录</button>
-      </div>
-    </div>
-
-    <!-- 已登录：设置页面 -->
-    <div id="loggedIn" style="display:none;">
-      <h3>⚙ 设置</h3>
-      <div class="domain-display" id="loggedDomain" style="margin-bottom:10px;"></div>
-      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
-        已登录：<span id="loggedUser" style="color:var(--accent);font-weight:600;"></span>
-      </div>
-
-      <label>主题</label>
-      <div class="theme-toggle">
-        <button id="themeDark" onclick="setTheme('dark')">🌙 深色</button>
-        <button id="themeLight" onclick="setTheme('light')">☀️ 浅色</button>
-      </div>
-
-      <label>显示模式</label>
-      <div class="theme-toggle">
-        <button id="modeFull" onclick="setMode('full')">完整</button>
-        <button id="modeMinimal" onclick="setMode('minimal')">极简</button>
-      </div>
-
-      <label>刷新频率</label>
-      <div class="slider-wrap">
-        <div class="slider-value" id="intervalValue">1 分钟</div>
-        <div class="slider-track" id="intervalTrack">
-          <div class="slider-fill" id="intervalFill"></div>
-          <div class="slider-thumb" id="intervalThumb"></div>
+      <!-- Step 1: Domain -->
+      <div id="domainStep">
+        <div class="settings-header">
+          <span class="settings-title">连接 API</span>
+          <button class="settings-close" onclick="hideSettings()" aria-label="关闭">✕</button>
         </div>
-        <div class="slider-labels">
-          <span>1 分钟</span>
-          <span>30 分钟</span>
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="domainInput">API 域名</label>
+          <input type="url" class="form-input" id="domainInput" placeholder="https://api.example.com" autocomplete="url">
+          <span class="form-hint">输入你的 New API 面板地址</span>
+        </div>
+        <div class="error-line" id="domainError" style="display:none"></div>
+        <div class="btn-row right">
+          <button class="btn btn-secondary" onclick="hideSettings()">取消</button>
+          <button class="btn btn-primary" onclick="saveDomainAndNext()">下一步</button>
         </div>
       </div>
 
-      <label>透明度</label>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-        <input type="range" id="opacitySlider" min="10" max="100" value="80"
-               oninput="applyOpacity(this.value);document.getElementById('opacityVal').textContent=this.value+'%';saveOpacity(this.value)"
-               style="flex:1;accent-color:var(--accent);height:14px;" />
-        <span id="opacityVal" style="font-size:11px;color:var(--text-primary);min-width:28px;text-align:right;font-weight:600;">80%</span>
+      <!-- Step 2: Login -->
+      <div id="loginStep" style="display:none">
+        <div class="settings-header">
+          <span class="settings-title">账号登录</span>
+          <button class="settings-close" onclick="hideSettings()" aria-label="关闭">✕</button>
+        </div>
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <div class="domain-badge"><span id="domainDisplay"></span></div>
+        <div class="form-group">
+          <label class="form-label" for="usernameInput">用户名</label>
+          <input type="text" class="form-input" id="usernameInput" placeholder="请输入用户名" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="passwordInput">密码</label>
+          <input type="password" class="form-input" id="passwordInput" placeholder="请输入密码" autocomplete="current-password">
+        </div>
+        <div class="error-line" id="loginError" style="display:none"></div>
+        <div class="btn-row between">
+          <button class="btn btn-secondary" onclick="goToDomainStep()">上一步</button>
+          <button class="btn btn-primary" onclick="doLogin()">登录</button>
+        </div>
       </div>
 
-      <div class="modal-btns">
-        <button class="btn-cancel" onclick="hideSettings()">关闭</button>
-        <button class="btn-save" style="background:var(--err);" onclick="doLogout()">退出登录</button>
+      <!-- Logged In: Settings -->
+      <div id="loggedIn" style="display:none">
+        <div class="settings-header">
+          <span class="settings-title">设置</span>
+          <button class="settings-close" onclick="hideSettings()" aria-label="关闭">✕</button>
+        </div>
+        <div class="domain-badge"><span id="loggedDomain"></span></div>
+        <div class="user-badge">已登录：<strong id="loggedUser"></strong></div>
+
+        <div class="form-group">
+          <label class="form-label">显示模式</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active" id="modeFull" onclick="setMode('full')">完整</button>
+            <button class="toggle-opt" id="modeMinimal" onclick="setMode('minimal')">极简</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">主题</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active" id="themeDark" onclick="setTheme('dark')">深色</button>
+            <button class="toggle-opt" id="themeLight" onclick="setTheme('light')">浅色</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">刷新频率（分钟）</label>
+          <input type="range" id="intervalSlider" min="1" max="30" value="1"
+                 style="width:100%; accent-color:var(--accent);"
+                 oninput="updateInterval(this.value)" onchange="saveInterval(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t3);margin-top:2px">
+            <span>1</span><span id="intervalLabel">1</span><span>30</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">透明度</label>
+          <div class="range-ctl">
+            <input type="range" id="opacitySlider" min="10" max="100" value="80"
+                   oninput="opacityChanged(this.value)">
+            <span class="range-val" id="opacityVal">80%</span>
+          </div>
+        </div>
+        <div class="btn-row between">
+          <button class="btn btn-danger" onclick="doLogout()">退出登录</button>
+          <button class="btn btn-secondary" onclick="hideSettings()">关闭</button>
+        </div>
       </div>
+
     </div>
   </div>
 </div>
 
 <script>
-  let currentData = null
-  let pinned = true
-  let currentOpacity = 80
-  let currentDomain = ''
-  let currentInterval = 1   // 分钟，默认 1
-  let minimalMode = false
+  // ═══ State ═══
+  let currentData = null, pinned = true, currentOpacity = 80;
+  let currentDomain = '', currentInterval = 1, minimalMode = false;
+  const QUOTA_PER_YUAN = 500000;
 
-  const QUOTA_PER_YUAN = 500000
-  const MIN_INTERVAL = 1
-  const MAX_INTERVAL = 30
-
-  /* ── 工具 ────────────────────────────── */
-  function extractBalance(data) {
-    if (!data || !data.ok) return null
-    const d = data.data ?? null
-    if (!d) return null
-    const root = d.data ?? d
-    const quota = root.quota ?? root.balance ?? root.credit
-    if (quota != null) return parseFloat(quota) / QUOTA_PER_YUAN
-    return null
-  }
-
-  function extractTodayUsage(logsData) {
-    if (!logsData || !logsData.ok) return null
-    const d = logsData.data ?? null
-    if (!d) return null
-    const items = d.data?.items ?? []
-    if (!Array.isArray(items) || items.length === 0) return null
-    let totalQuota = 0, totalTokens = 0
-    for (const entry of items) {
-      totalQuota += (entry.quota || 0)
-      totalTokens += ((entry.prompt_tokens || 0) + (entry.completion_tokens || 0))
+  // ═══ Animated Number ═══
+  function animateValue(el, targetVal, prefix='¥', decimals=2, dur=450) {
+    const curText = el.textContent;
+    const curNum = parseFloat(curText.replace(/[^0-9.-]/g,'')) || 0;
+    const tgtNum = parseFloat(targetVal) || 0;
+    if (Math.abs(curNum - tgtNum) < 0.001) {
+      el.textContent = targetVal != null ? prefix + Number(targetVal).toFixed(decimals) : '-';
+      el.classList.remove('loading');
+      return;
     }
-    if (totalQuota === 0) return null
-    return { cost: totalQuota / QUOTA_PER_YUAN, tokens: totalTokens }
-  }
-
-  function extractModelRanking(logsData) {
-    if (!logsData || !logsData.ok) return null
-    const d = logsData.data ?? null
-    if (!d) return null
-    const items = d.data?.items ?? []
-    if (!Array.isArray(items) || items.length === 0) return null
-    const modelMap = {}
-    for (const entry of items) {
-      const name = entry.model_name ?? entry.model ?? 'unknown'
-      if (!modelMap[name]) modelMap[name] = { name, quota: 0, tokens: 0 }
-      modelMap[name].quota += (entry.quota || 0)
-      modelMap[name].tokens += ((entry.prompt_tokens || 0) + (entry.completion_tokens || 0))
+    const start = performance.now(), from = curNum;
+    function step(now) {
+      const p = Math.min((now - start) / dur, 1);
+      const v = from + (tgtNum - from) * (1 - Math.pow(1 - p, 3));
+      el.textContent = prefix + v.toFixed(decimals);
+      el.classList.remove('loading');
+      if (p < 1) requestAnimationFrame(step);
     }
-    return Object.values(modelMap)
-      .map(m => ({ name: m.name, todayCost: m.quota / QUOTA_PER_YUAN, todayTokens: m.tokens }))
-      .sort((a, b) => b.todayCost - a.todayCost)
-      .slice(0, 5)
+    requestAnimationFrame(step);
   }
 
-
-
-  /* ── 渲染 ────────────────────────────── */
-  function renderMetrics(balance, todayUsage) {
-    document.getElementById('balanceVal').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
-    document.getElementById('todayCostVal').textContent = todayUsage ? '¥' + todayUsage.cost.toFixed(2) : '—'
-    document.getElementById('compactBalance').textContent = balance != null ? '¥' + balance.toFixed(2) : '—'
-    document.getElementById('compactToday').textContent = todayUsage ? '¥' + todayUsage.cost.toFixed(2) : '—'
+  // ═══ Data Extractors ═══
+  function getBalance(data) {
+    if (!data?.ok) return null;
+    const root = (data.data?.data ?? data.data);
+    const q = root?.quota;
+    return q != null ? parseFloat(q) / QUOTA_PER_YUAN : null;
   }
 
-  function renderModelList(models) {
-    const list = document.getElementById('modelList')
-    if (!models || models.length === 0) {
-      list.innerHTML = '<div class="loading" style="padding:14px 0;font-size:12px;">暂无模型用量数据</div>'
-      return
+  function getToday(logs) {
+    if (!logs?.ok) return null;
+    const items = logs.data?.data?.items ?? [];
+    if (!items.length) return null;
+    let quota = 0, tokens = 0;
+    const models = new Set();
+    for (const e of items) {
+      quota += (e.quota || 0);
+      tokens += ((e.prompt_tokens || 0) + (e.completion_tokens || 0));
+      if (e.model_name) models.add(e.model_name);
     }
-    const maxCost = models[0]?.todayCost || 1
-    list.innerHTML = models.map((m, i) => {
-      const rankClass = i < 3 ? ` r${i + 1}` : ''
-      const barWidth = maxCost > 0 ? (m.todayCost / maxCost * 100) : 0
-      return `
-        <div class="model-row">
-          <span class="model-rank${rankClass}">${i + 1}</span>
-          <div class="model-info">
-            <div class="model-name">${m.name}</div>
-            <div class="model-bar"><div class="fill" style="width:${barWidth}%"></div></div>
-          </div>
-          <span class="model-cost">¥${m.todayCost.toFixed(2)}</span>
-        </div>`
-    }).join('')
+    if (!quota) return null;
+    return { cost: quota / QUOTA_PER_YUAN, tokens, requests: items.length, models: models.size };
+  }
+
+  function getModels(logs) {
+    if (!logs?.ok) return null;
+    const items = logs.data?.data?.items ?? [];
+    if (!items.length) return null;
+    const map = {};
+    for (const e of items) {
+      const n = e.model_name || 'unknown';
+      if (!map[n]) map[n] = { name: n, cost: 0 };
+      map[n].cost += (e.quota || 0);
+    }
+    return Object.values(map)
+      .map(m => ({ ...m, cost: m.cost / QUOTA_PER_YUAN }))
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 6);
+  }
+
+  // ═══ Render ═══
+  function renderMetrics(balance, today) {
+    animateValue(document.getElementById('balanceVal'), balance, '¥', 2, 500);
+    const costEl = document.getElementById('todayCostVal');
+    animateValue(costEl, today?.cost, '¥', 2, 400);
+
+
+
+    // Balance change (vs previous if available)
+    // For now we show a subtle indicator
+  }
+
+  function renderModels(models) {
+    const list = document.getElementById('modelList');
+    const label = document.getElementById('rankLabel');
+    if (!models?.length) {
+      if (!document.body.classList.contains('minimal')) {
+        list.innerHTML = '<div class="state-msg">暂无模型数据</div>';
+      } else {
+        list.innerHTML = '';
+      }
+      label.textContent = '模型排行';
+      return;
+    }
+    const maxModels = document.body.classList.contains('minimal') ? 3 : 6;
+    const showModels = models.slice(0, maxModels);
+    label.textContent = '模型排行 · ' + models.length;
+    const maxCost = showModels[0].cost || 1;
+    list.innerHTML = showModels.map((m, i) => {
+      const rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      const barWidth = Math.max(4, (m.cost / maxCost) * 100);
+      if (document.body.classList.contains('minimal')) {
+        return `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:8px;">
+          <span style="color:var(--t2);">${m.name}</span>
+          <span style="color:var(--t3);font-variant-numeric:tabular-nums;font-weight:600;">¥${m.cost.toFixed(2)}</span>
+        </div>`;
+      }
+      return `<div class="model-item ${rc}">
+        <div class="model-rank">${i + 1}</div>
+        <div class="model-info">
+          <div class="model-name" title="${m.name}">${m.name}</div>
+          <div class="model-bar"><div class="model-bar-fill" style="width:${barWidth}%"></div></div>
+        </div>
+        <div class="model-cost">¥${m.cost.toFixed(2)}</div>
+      </div>`;
+    }).join('');
   }
 
   function render(result) {
-    const errBox = document.getElementById('errorBox')
-    errBox.style.display = 'none'
-
+    const err = document.getElementById('errorBox');
+    err.style.display = 'none';
     if (result?.expired || result?.error) {
-      showError(result.error || '登录已过期')
-      document.getElementById('statusText').innerHTML =
-        '<span class="status-dot err"></span> 需重新登录'
-      return
+      showErr(result.error || '登录已过期');
+      setStatus('offline', '需重新登录');
+      return;
     }
-
-    if (!result || !result.ok) {
-      if (result?.error) showError(result.error)
-      return
+    if (!result?.ok) {
+      if (result?.error) showErr(result.error);
+      setStatus('offline', '连接失败');
+      return;
     }
-
-    const { userInfo, logs, tokens } = result
-    const balance = extractBalance(userInfo) ?? extractBalance(tokens)
-    const todayUsage = extractTodayUsage(logs) ?? null
-    const models = extractModelRanking(logs) ?? []
-
-    renderMetrics(balance, todayUsage)
-    renderModelList(models)
-
-    const hasData = balance != null || todayUsage != null || models.length > 0
-    document.getElementById('statusText').innerHTML =
-      `<span class="status-dot ${hasData ? 'ok' : 'warn'}"></span> ${hasData ? '已连接' : '数据异常'}`
+    const { userInfo, logs } = result;
+    const balance = getBalance(userInfo);
+    const today = getToday(logs);
+    const models = getModels(logs);
+    renderMetrics(balance, today);
+    // Only render models in normal mode
+    if (!document.body.classList.contains('minimal')) {
+      renderModels(models);
+    } else {
+      document.getElementById('modelList').innerHTML = '';
+      document.getElementById('rankLabel').textContent = '';
+    }
+    const now = new Date();
     document.getElementById('updatedText').textContent =
-      '更新于 ' + new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
-
-    if (!hasData) {
-      errBox.textContent = '暂无数据，请刷新重试'
-      errBox.style.background = 'rgba(255,189,46,0.10)'
-      errBox.style.borderColor = 'rgba(255,189,46,0.25)'
-      errBox.style.color = '#FFD54F'
-      errBox.style.display = 'block'
-    }
-
-    fitMinimalHeight()
+      now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setStatus(balance != null || today ? 'online' : 'warning', balance != null || today ? '已连接' : '数据异常');
+    fitContent();
   }
 
-  function showError(msg) {
-    const errBox = document.getElementById('errorBox')
-    errBox.textContent = msg
-    errBox.style.display = 'block'
-    document.getElementById('statusText').innerHTML =
-      '<span class="status-dot err"></span> 连接失败'
+  function showErr(msg) {
+    const e = document.getElementById('errorBox');
+    e.textContent = msg; e.style.display = 'block';
+    setStatus('offline', '连接失败');
   }
 
-  /* ── 刷新 ────────────────────────────── */
-  let isRefreshing = false
-  let lastGoodData = null
+  function setStatus(s, t) {
+    document.getElementById('statusDot').className = 'status-dot ' + s;
+    document.getElementById('statusText').textContent = t;
+  }
 
+  // ═══ Refresh ═══
+  let refreshing = false;
   async function manualRefresh() {
-    if (isRefreshing) return
-    isRefreshing = true
-    const btn = document.querySelector('.btn.refresh')
-    btn?.classList.add('spinning')
-    document.getElementById('statusText').innerHTML =
-      '<span class="status-dot pulsing"></span> 刷新中…'
-    const result = await window.widgetAPI?.fetchData()
-    if (result) {
-      currentData = result
-      if (!result.expired && !result.error) lastGoodData = result
-      render(result)
-    }
-    isRefreshing = false
-    btn?.classList.remove('spinning')
-    fitMinimalHeight()
+    if (refreshing) return;
+    refreshing = true;
+    const b = document.querySelector('.refresh-btn');
+    b?.classList.add('spinning');
+    setStatus('fetching', '刷新中…');
+    const r = await window.widgetAPI?.fetchData();
+    if (r) { currentData = r; render(r); }
+    refreshing = false;
+    b?.classList.remove('spinning');
+    fitContent();
   }
 
   async function autoRefresh() {
-    if (isRefreshing) return
-    isRefreshing = true
+    if (refreshing) return;
+    refreshing = true;
     try {
-      const result = await window.widgetAPI?.fetchData()
-      if (result && !result.expired && !result.error) {
-        currentData = result
-        lastGoodData = result
-        render(result)
-      }
+      const r = await window.widgetAPI?.fetchData();
+      if (r && !r.expired && !r.error) { currentData = r; render(r); }
     } catch {}
-    isRefreshing = false
+    refreshing = false;
   }
 
-  /* ── 自定义滑块：1–30 分钟 ────────────────── */
-  function initIntervalSlider() {
-    const track  = document.getElementById('intervalTrack')
-    const fill   = document.getElementById('intervalFill')
-    const thumb  = document.getElementById('intervalThumb')
-    const valueEl = document.getElementById('intervalValue')
-    if (!track) return
-
-    let dragging = false
-
-    function pctFromValue(v) { return (v - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL) * 100 }
-    function valueFromPct(pct) { return Math.round(pct / 100 * (MAX_INTERVAL - MIN_INTERVAL) + MIN_INTERVAL) }
-
-    function updateUI(val) {
-      const pct = pctFromValue(val)
-      fill.style.width = pct + '%'
-      thumb.style.left  = pct + '%'
-      valueEl.textContent  = val + ' 分钟'
-      currentInterval  = val
-    }
-
-    function handlePointer(e) {
-      const rect = track.getBoundingClientRect()
-      let pct = (e.clientX - rect.left) / rect.width * 100
-      pct = Math.max(0, Math.min(100, pct))
-      const val = valueFromPct(pct)
-      updateUI(val)
-    }
-
-    // 点击轨道跳转
-    track.addEventListener('pointerdown', e => {
-      dragging = true
-      thumb.setPointerCapture(e.pointerId)
-      handlePointer(e)
-    })
-    thumb.addEventListener('pointerdown', e => {
-      dragging = true
-      thumb.setPointerCapture(e.pointerId)
-      e.stopPropagation()
-    })
-    window.addEventListener('pointermove', e => { if (dragging) handlePointer(e) })
-    window.addEventListener('pointerup', () => { dragging = false })
-
-    // 初始化
-    updateUI(currentInterval)
-    return { updateUI }
-  }
-
-  let _intervalSlider = null   // { updateUI(val) }
-
-  /* ── 两步骤登录流程 ────────────────── */
+  // ═══ Settings ═══
   async function showSettings() {
-    const cfg = await window.widgetAPI?.loadConfig()
-    currentDomain = cfg?.apiBase || ''
-
-    if (cfg?.hasAuth) {
-      showLoggedInView(cfg)
-    } else if (currentDomain) {
-      showLoginStep(currentDomain)
-    } else {
-      showDomainStep()
-    }
-    document.getElementById('settingsModal').classList.add('open')
-
-    // 延迟初始化滑块，等 DOM 渲染完
+    const cfg = await window.widgetAPI?.loadConfig();
+    currentDomain = cfg?.apiBase || '';
+    if (cfg?.hasAuth) showLoggedIn(cfg);
+    else if (currentDomain) showLoginStep(currentDomain);
+    else showDomainStep();
+    document.getElementById('settingsOverlay').classList.add('open');
     setTimeout(() => {
-      if (!_intervalSlider) _intervalSlider = initIntervalSlider()
-      _intervalSlider.updateUI(currentInterval)
-    }, 100)
-  }
-
-  function showDomainStep() {
-    document.getElementById('domainStep').style.display = 'block'
-    document.getElementById('loginStep').style.display = 'none'
-    document.getElementById('loggedIn').style.display = 'none'
-    document.getElementById('domainError').style.display = 'none'
-    document.getElementById('domainInput').value = currentDomain || ''
-    setTimeout(() => document.getElementById('domainInput')?.focus(), 150)
-  }
-
-  function showLoginStep(domain) {
-    document.getElementById('domainStep').style.display = 'none'
-    document.getElementById('loginStep').style.display = 'block'
-    document.getElementById('loggedIn').style.display = 'none'
-    document.getElementById('loginError').style.display = 'none'
-    document.getElementById('domainDisplay').textContent = '🔗 ' + domain
-    document.getElementById('usernameInput').value = ''
-    document.getElementById('passwordInput').value = ''
-    document.getElementById('stepDot1').classList.add('done')
-    document.getElementById('stepDot2').classList.add('active')
-    setTimeout(() => document.getElementById('usernameInput')?.focus(), 150)
-  }
-
-  function showLoggedInView(cfg) {
-    document.getElementById('domainStep').style.display = 'none'
-    document.getElementById('loginStep').style.display = 'none'
-    document.getElementById('loggedIn').style.display = 'block'
-    document.getElementById('loggedUser').textContent = cfg.username || '已登录'
-    document.getElementById('loggedDomain').textContent = '🔗 ' + (cfg.apiBase || '未设置')
-    currentInterval = Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, cfg.interval || 1))
-    document.getElementById('intervalSlider')  // 兼容旧字段名
-    if (_intervalSlider) _intervalSlider.updateUI(currentInterval)
-    const t = cfg.theme || 'dark'
-    document.getElementById('themeDark').classList.toggle('active', t === 'dark')
-    document.getElementById('themeLight').classList.toggle('active', t === 'light')
-    const op = cfg.opacity || 80
-    document.getElementById('opacitySlider').value = op
-    document.getElementById('opacityVal').textContent = op + '%'
-    // 极简模式按钮状态
-    try {
-      document.getElementById('modeFull').classList.toggle('active', !minimalMode)
-      document.getElementById('modeMinimal').classList.toggle('active', minimalMode)
-    } catch {}
-  }
-
-  function goToDomainStep() {
-    showDomainStep()
-  }
-
-  function normalizeDomain(raw) {
-    let u = raw.trim()
-    if (!u) return ''
-    if (!/^https?:\/\//i.test(u)) u = 'https://' + u
-    if (u.endsWith('/')) u = u.slice(0, -1)
-    return u
-  }
-
-  async function saveDomainAndNext() {
-    const raw = document.getElementById('domainInput').value
-    const domain = normalizeDomain(raw)
-    if (!domain) {
-      const err = document.getElementById('domainError')
-      err.textContent = '请输入有效的域名（如 https://api.example.com）'
-      err.style.display = 'block'
-      return
-    }
-    document.getElementById('domainError').style.display = 'none'
-    currentDomain = domain
-    await window.widgetAPI?.saveDomain({ domain })
-    showLoginStep(domain)
+      const isl = document.getElementById('intervalSlider');
+      if (isl) { isl.value = currentInterval; updateInterval(currentInterval); }
+      const osl = document.getElementById('opacitySlider');
+      if (osl) { osl.value = cfg?.opacity || 80; document.getElementById('opacityVal').textContent = (cfg?.opacity || 80) + '%'; }
+    }, 100);
   }
 
   function hideSettings() {
-    document.getElementById('settingsModal').classList.remove('open')
-    // 保存设置
-    if (_intervalSlider) window.widgetAPI?.setRefreshInterval(currentInterval)
-    const opSlider = document.getElementById('opacitySlider')
-    if (opSlider) saveOpacity(opSlider.value)
+    document.getElementById('settingsOverlay').classList.remove('open');
+    saveInterval(currentInterval);
+  }
+
+  function showDomainStep() {
+    document.getElementById('domainStep').style.display = 'block';
+    document.getElementById('loginStep').style.display = 'none';
+    document.getElementById('loggedIn').style.display = 'none';
+    document.getElementById('domainError').style.display = 'none';
+    document.getElementById('domainInput').value = currentDomain || '';
+    setTimeout(() => document.getElementById('domainInput')?.focus(), 200);
+  }
+
+  function showLoginStep(d) {
+    document.getElementById('domainStep').style.display = 'none';
+    document.getElementById('loginStep').style.display = 'block';
+    document.getElementById('loggedIn').style.display = 'none';
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('domainDisplay').textContent = d;
+    document.getElementById('usernameInput').value = '';
+    document.getElementById('passwordInput').value = '';
+    setTimeout(() => document.getElementById('usernameInput')?.focus(), 200);
+  }
+
+  function goToDomainStep() { showDomainStep(); }
+
+  function showLoggedIn(cfg) {
+    document.getElementById('domainStep').style.display = 'none';
+    document.getElementById('loginStep').style.display = 'none';
+    document.getElementById('loggedIn').style.display = 'block';
+    document.getElementById('loggedUser').textContent = cfg.username || '已登录';
+    document.getElementById('loggedDomain').textContent = cfg.apiBase || '未设置';
+    currentInterval = Math.max(1, Math.min(30, cfg.interval || 1));
+    document.getElementById('intervalSlider').value = currentInterval;
+    updateInterval(currentInterval);
+    const t = cfg.theme || 'dark';
+    document.getElementById('themeDark').classList.toggle('active', t === 'dark');
+    document.getElementById('themeLight').classList.toggle('active', t === 'light');
+    document.getElementById('modeFull').classList.toggle('active', !minimalMode);
+    document.getElementById('modeMinimal').classList.toggle('active', minimalMode);
+    document.getElementById('opacitySlider').value = cfg.opacity || 80;
+    document.getElementById('opacityVal').textContent = (cfg.opacity || 80) + '%';
+  }
+
+  function normalizeUrl(r) {
+    let u = r.trim(); if (!u) return '';
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    if (u.endsWith('/')) u = u.slice(0, -1);
+    return u;
+  }
+
+  async function saveDomainAndNext() {
+    const d = normalizeUrl(document.getElementById('domainInput').value);
+    if (!d) {
+      const e = document.getElementById('domainError');
+      e.textContent = '请输入有效域名'; e.style.display = 'block'; return;
+    }
+    document.getElementById('domainError').style.display = 'none';
+    currentDomain = d;
+    await window.widgetAPI?.saveDomain({ domain: d });
+    showLoginStep(d);
   }
 
   async function doLogin() {
-    const username = document.getElementById('usernameInput').value.trim()
-    const password = document.getElementById('passwordInput').value
-    const errEl = document.getElementById('loginError')
-    if (!username || !password) {
-      errEl.textContent = '请输入用户名和密码'
-      errEl.style.display = 'block'
-      return
-    }
-    if (!currentDomain) {
-      errEl.textContent = '请先输入 API 域名'
-      errEl.style.display = 'block'
-      return
-    }
-    const result = await window.widgetAPI?.doLogin({ domain: currentDomain, username, password })
-    if (result?.ok) {
-      hideSettings()
-      manualRefresh()
-    } else {
-      errEl.textContent = result?.error || '登录失败，请检查用户名和密码'
-      errEl.style.display = 'block'
-    }
+    const u = document.getElementById('usernameInput').value.trim();
+    const p = document.getElementById('passwordInput').value;
+    const err = document.getElementById('loginError');
+    if (!u || !p) { err.textContent = '请输入用户名和密码'; err.style.display = 'block'; return; }
+    if (!currentDomain) { err.textContent = '请先输入域名'; err.style.display = 'block'; return; }
+    const r = await window.widgetAPI?.doLogin({ domain: currentDomain, username: u, password: p });
+    if (r?.ok) { hideSettings(); manualRefresh(); }
+    else { err.textContent = r?.error || '登录失败'; err.style.display = 'block'; }
   }
 
   async function doLogout() {
-    await window.widgetAPI?.logout()
-    hideSettings()
-    document.getElementById('balanceVal').textContent = '—'
-    document.getElementById('todayCostVal').textContent = '—'
-    document.getElementById('modelList').innerHTML = '<div class="loading" style="padding:14px 0;">请先登录</div>'
-    document.getElementById('statusText').innerHTML = '<span class="status-dot unknown"></span> 未登录'
-    setTimeout(showSettings, 300)
+    await window.widgetAPI?.logout(); hideSettings();
+    document.getElementById('balanceVal').textContent = '¥ --';
+    document.getElementById('balanceVal').classList.add('loading');
+    document.getElementById('todayCostVal').textContent = '¥ --';
+    document.getElementById('todayCostVal').classList.add('loading');
+
+    document.getElementById('modelList').innerHTML = '<div class="state-msg">请登录后查看数据</div>';
+    setStatus('idle', '未登录');
+    setTimeout(showSettings, 400);
   }
 
-  /* ── 置顶 ────────────────────────────── */
+  // ═══ Controls ═══
   function togglePin() {
-    pinned = !pinned
-    window.widgetAPI?.setPin(pinned)
-    const btn = document.getElementById('pinBtn')
-    if (pinned) { btn.classList.add('active'); btn.title = '在所有桌面显示' }
-    else        { btn.classList.remove('active'); btn.title = '仅当前桌面' }
+    pinned = !pinned;
+    window.widgetAPI?.setPin(pinned);
+    document.getElementById('pinBtn').classList.toggle('active', pinned);
   }
 
-  /* ── 主题 ────────────────────────────── */
-  function setTheme(theme) {
-    document.body.classList.toggle('light', theme === 'light')
-    try {
-      document.getElementById('themeDark').classList.toggle('active', theme === 'dark')
-      document.getElementById('themeLight').classList.toggle('active', theme === 'light')
-    } catch {}
-    window.widgetAPI?.saveTheme(theme)
-    applyOpacity(currentOpacity)
+  async function setTheme(t) {
+    document.body.classList.toggle('light', t === 'light');
+    document.getElementById('themeDark').classList.toggle('active', t === 'dark');
+    document.getElementById('themeLight').classList.toggle('active', t === 'light');
+    await window.widgetAPI?.saveTheme(t);
+    applyOpacity(currentOpacity);
   }
 
-  /* ── 极简模式 ────────────────────────── */
-  function setMode(mode) {
-    minimalMode = (mode === 'minimal')
-    document.body.classList.toggle('minimal', minimalMode)
-    try {
-      document.getElementById('modeFull').classList.toggle('active', !minimalMode)
-      document.getElementById('modeMinimal').classList.toggle('active', minimalMode)
-    } catch {}
-    window.widgetAPI?.saveMinimalMode(minimalMode)
-    if (minimalMode) requestAnimationFrame(fitMinimalHeight)
+  function setMode(m) {
+    minimalMode = (m === 'minimal');
+    document.body.classList.toggle('minimal', minimalMode);
+    document.getElementById('modeFull').classList.toggle('active', !minimalMode);
+    document.getElementById('modeMinimal').classList.toggle('active', minimalMode);
+    window.widgetAPI?.saveMinimalMode(minimalMode);
+    if (minimalMode) requestAnimationFrame(fitContent);
   }
 
-  let _lastMinimalH = 0
-  function fitMinimalHeight() {
-    if (!minimalMode) return
+  let _lastH = 0, _lastW = 0;
+  function fitContent() {
     requestAnimationFrame(() => {
-      const h = Math.ceil(document.body.scrollHeight)
-      if (Math.abs(h - _lastMinimalH) < 3) return
-      _lastMinimalH = h
-      window.widgetAPI?.resizeWindow(260, h)
-    })
+      const h = Math.ceil(document.body.scrollHeight);
+      const w = document.body.classList.contains('minimal') ? 96 : 162;
+      if (Math.abs(h - _lastH) < 2 && w === _lastW) return;
+      _lastH = h; _lastW = w;
+      window.widgetAPI?.resizeWindow(w, h);
+    });
   }
 
-  /* ── 透明度 ────────────────────────────── */
-  function applyOpacity(value) {
-    currentOpacity = parseInt(value)
-    const alpha = 1 - currentOpacity / 100
-    const isLight = document.body.classList.contains('light')
-    document.body.style.background = isLight
-      ? `rgba(242,242,248,${alpha.toFixed(2)})`
-      : `rgba(13,13,20,${alpha.toFixed(2)})`
+  // 窗口拖拽后自动回弹到内容高度
+  let _resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => fitContent(), 150);
+  });
+
+  function applyOpacity(v) {
+    currentOpacity = parseInt(v);
+    const a = (1 - currentOpacity / 100).toFixed(2);
+    document.body.style.background = document.body.classList.contains('light')
+      ? `rgba(238,240,245,${a})`
+      : `rgba(6,8,13,${a})`;
   }
 
-  function saveOpacity(value) {
-    try { window.widgetAPI?.saveOpacity(parseInt(value)) } catch {}
+  function opacityChanged(v) {
+    document.getElementById('opacityVal').textContent = v + '%';
+    applyOpacity(v);
+    window.widgetAPI?.saveOpacity(parseInt(v));
   }
 
-  /* ── 回车键 ────────────────────────────── */
-  document.getElementById('passwordInput')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin()
-  })
-  document.getElementById('domainInput')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') saveDomainAndNext()
-  })
-  document.getElementById('usernameInput')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('passwordInput')?.focus()
-  })
+  function updateInterval(v) {
+    document.getElementById('intervalLabel').textContent = v;
+  }
 
-  /* ── 点击遮罩关闭 ────────────────────── */
-  document.getElementById('settingsModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) hideSettings()
-  })
+  async function saveInterval(v) {
+    currentInterval = Math.max(1, Math.min(30, parseInt(v) || 1));
+    await window.widgetAPI?.setRefreshInterval(currentInterval);
+  }
 
-  /* ── 事件绑定 ────────────────────────── */
-  window.addEventListener('widget-refresh', autoRefresh)
-  window.addEventListener('widget-show-settings', showSettings)
+  // ═══ Event Bindings ═══
+  document.getElementById('passwordInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('domainInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') saveDomainAndNext(); });
+  document.getElementById('usernameInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('passwordInput')?.focus(); });
+  document.getElementById('settingsOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) hideSettings(); });
+  window.addEventListener('widget-refresh', autoRefresh);
+  window.addEventListener('widget-show-settings', showSettings);
 
-  /* ── 首次加载 ────────────────────────── */
-  ;(async () => {
-    const cfg = await window.widgetAPI?.loadConfig()
-    currentDomain = cfg?.apiBase || ''
-    currentInterval = Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, cfg?.interval || 1))
-    minimalMode = cfg?.minimalMode || false
-    if (minimalMode) document.body.classList.add('minimal')
-    document.getElementById('pinBtn').classList.add('active')
-    if (cfg?.theme === 'light') setTheme('light')
-    else { try { document.getElementById('themeDark').classList.add('active') } catch {} }
-    applyOpacity(cfg?.opacity || 80)
-    if (cfg?.hasAuth) {
-      manualRefresh()
+  // ═══ Init ═══
+  (async () => {
+    const cfg = await window.widgetAPI?.loadConfig();
+    currentDomain = cfg?.apiBase || '';
+    currentInterval = Math.max(1, Math.min(30, cfg?.interval || 1));
+    minimalMode = cfg?.minimalMode || false;
+    if (minimalMode) document.body.classList.add('minimal');
+    if (cfg?.theme === 'light') {
+      document.body.classList.add('light');
+      document.getElementById('themeLight')?.classList.add('active');
     } else {
-      setTimeout(showSettings, 300)
+      document.getElementById('themeDark')?.classList.add('active');
     }
-  })()
-
+    applyOpacity(cfg?.opacity || 80);
+    document.getElementById('opacitySlider').value = cfg?.opacity || 80;
+    document.getElementById('opacityVal').textContent = (cfg?.opacity || 80) + '%';
+    if (cfg?.hasAuth) { manualRefresh(); }
+    else { setTimeout(showSettings, 400); }
+  })();
 </script>
 </body>
 </html>

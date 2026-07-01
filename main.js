@@ -252,6 +252,11 @@ function createWindow() {
 
 // ── 托盘 ───────────────────────────────────────
 let summaryData = null
+let trayCarouselTimer = null
+let trayCarouselState = 0 // 0=当日消耗, 1=剩余额度
+let trayDailyCost = 0
+let trayBalance = 0
+let carouselEnabled = true
 
 function buildTrayTooltip(result) {
   if (!result) return 'NewApiBar'
@@ -277,6 +282,75 @@ function buildTrayMenu(result) {
   if (!tray) return
   summaryData = result
   tray.setToolTip(buildTrayTooltip(result))
+
+  // 采集当日消耗和剩余额度
+  if (result?.logs?.ok) {
+    const items = result.logs.data?.data?.items ?? []
+    let totalQuota = 0
+    for (const e of items) totalQuota += (e.quota || 0)
+    trayDailyCost = totalQuota / 500000
+  }
+  const root = result?.userInfo?.data?.data ?? result?.userInfo?.data
+  trayBalance = (root?.quota || 0) / 500000
+
+  if (carouselEnabled) {
+    startTrayCarousel()
+  } else {
+    renderTrayIcon('¥' + Math.max(0, Math.round(trayDailyCost)))
+  }
+}
+
+// ── 轮播切换 ──────────────────────────────────
+function startTrayCarousel() {
+  clearInterval(trayCarouselTimer)
+  trayCarouselState = 0
+
+  function show() {
+    const val = trayCarouselState === 0 ? trayDailyCost : trayBalance
+    renderTrayIcon('¥' + Math.max(0, Math.round(val)))
+  }
+  show()
+
+  trayCarouselTimer = setInterval(() => {
+    trayCarouselState = trayCarouselState ? 0 : 1
+    const val = trayCarouselState === 0 ? trayDailyCost : trayBalance
+    renderTrayIcon('¥' + Math.max(0, Math.round(val)))
+  }, 5000)
+}
+
+// ── 动态托盘图标：Canvas 渲染金额 ───────────────
+async function renderTrayIcon(text) {
+  if (!win || !tray) return
+  try {
+    const dataUrl = await win.webContents.executeJavaScript(`
+      (function() {
+        var canvas = document.createElement('canvas')
+        var ctx = canvas.getContext('2d')
+        var text = ${JSON.stringify(text)}
+        var fontSize = 5
+        var fontFamily = '-apple-system, system-ui, "SF Pro Text", sans-serif'
+        ctx.font = '700 ' + fontSize + 'px ' + fontFamily
+        var metrics = ctx.measureText(text)
+        var w = Math.ceil(metrics.width) + 2
+        var h = 7
+        canvas.width = w * 2
+        canvas.height = h * 2
+        ctx.scale(2, 2)
+        ctx.font = '700 ' + fontSize + 'px ' + fontFamily
+        ctx.fillStyle = '#000'
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'left'
+        ctx.fillText(text, 1, h / 2 + 0.5)
+        return canvas.toDataURL('image/png')
+      })()
+    `)
+    const img = nativeImage.createFromDataURL(dataUrl)
+    img.setTemplateImage(true)
+    tray.setImage(img)
+    debugLog('Tray icon: ' + text)
+  } catch (e) {
+    debugLog('renderTrayIcon error: ' + e.message)
+  }
 }
 
 function showTrayPopup() {
@@ -322,7 +396,7 @@ function showTrayPopup() {
 
   menuItems.push({ label: '设置…', click: () => { if (win) { win.show(); win.webContents.send('widget-show-settings') } } })
   menuItems.push({ type: 'separator' })
-  menuItems.push({ label: '退出', click: () => { clearInterval(refreshTimer); app.quit() } })
+  menuItems.push({ label: '退出', click: () => { clearInterval(refreshTimer); clearInterval(trayCarouselTimer); app.quit() } })
 
   tray.popUpContextMenu(Menu.buildFromTemplate(menuItems))
 }
@@ -394,7 +468,8 @@ ipcMain.handle('load-config', async () => {
     interval: cfg.interval || 1,
     theme: cfg.theme || 'dark',
     opacity: cfg.opacity ?? 80,
-    minimalMode: cfg.minimalMode || false
+    minimalMode: cfg.minimalMode || false,
+    carouselMode: cfg.carouselMode !== false  // 默认开启
   }
 })
 
@@ -476,10 +551,32 @@ ipcMain.handle('save-minimal-mode', (_, mode) => {
   }
 })
 
+ipcMain.handle('save-carousel-mode', (_, mode) => {
+  try {
+    const cfg = loadConfig()
+    cfg.carouselMode = mode
+    saveConfig(cfg)
+    carouselEnabled = mode
+    // 立即应用：若关闭轮播，停止轮播并显示当日消耗；若开启，重新启动轮播
+    if (!mode) {
+      clearInterval(trayCarouselTimer)
+      renderTrayIcon('¥' + Math.max(0, Math.round(trayDailyCost)))
+    } else {
+      startTrayCarousel()
+    }
+    debugLog(`CarouselMode saved: ${mode}`)
+    return { ok: true }
+  } catch (e) {
+    debugLog(`CarouselMode save failed: ${e.message}`)
+    return { ok: false, error: e.message }
+  }
+})
+
 // ── App 生命周期 ───────────────────────────────
 app.whenReady().then(() => {
   createTray()
   createWindow()
   const cfg = loadConfig()
+  carouselEnabled = cfg.carouselMode !== false
   if (cfg.cookies || cfg.token) startAutoRefresh()
 })

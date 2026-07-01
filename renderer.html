@@ -762,6 +762,13 @@ body.minimal .status-dot {
           </div>
         </div>
         <div class="form-group">
+          <label class="form-label">⚡ 菜单栏图标</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active" id="carouselOn" onclick="setCarousel(true)">轮换显示</button>
+            <button class="toggle-opt" id="carouselOff" onclick="setCarousel(false)">仅消耗</button>
+          </div>
+        </div>
+        <div class="form-group">
           <label class="form-label">主题</label>
           <div class="toggle-group">
             <button class="toggle-opt active" id="themeDark" onclick="setTheme('dark')">深色</button>
@@ -798,7 +805,7 @@ body.minimal .status-dot {
 <script>
   // ═══ State ═══
   let currentData = null, pinned = true, currentOpacity = 80;
-  let currentDomain = '', currentInterval = 1, minimalMode = false;
+  let currentDomain = '', currentInterval = 1, minimalMode = false, carouselMode = true;
   const QUOTA_PER_YUAN = 500000;
 
   // ═══ Animated Number ═══
@@ -1036,6 +1043,9 @@ body.minimal .status-dot {
     document.getElementById('modeMinimal').classList.toggle('active', minimalMode);
     document.getElementById('opacitySlider').value = cfg.opacity || 80;
     document.getElementById('opacityVal').textContent = (cfg.opacity || 80) + '%';
+    carouselMode = cfg.carouselMode !== false;
+    document.getElementById('carouselOn').classList.toggle('active', carouselMode);
+    document.getElementById('carouselOff').classList.toggle('active', !carouselMode);
   }
 
   function normalizeUrl(r) {
@@ -1104,6 +1114,13 @@ body.minimal .status-dot {
     if (minimalMode) requestAnimationFrame(fitContent);
   }
 
+  function setCarousel(on) {
+    carouselMode = on;
+    document.getElementById('carouselOn').classList.toggle('active', on);
+    document.getElementById('carouselOff').classList.toggle('active', !on);
+    window.widgetAPI?.saveCarouselMode(on);
+  }
+
   let _lastH = 0, _lastW = 0;
   function fitContent() {
     requestAnimationFrame(() => {
@@ -1164,6 +1181,7 @@ body.minimal .status-dot {
     currentDomain = cfg?.apiBase || '';
     currentInterval = Math.max(1, Math.min(30, cfg?.interval || 1));
     minimalMode = cfg?.minimalMode || false;
+    carouselMode = cfg?.carouselMode !== false;
     if (minimalMode) document.body.classList.add('minimal');
     if (cfg?.theme === 'light') {
       document.body.classList.add('light');

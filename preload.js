@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('widgetAPI', {
   saveTheme: (theme) => ipcRenderer.invoke('save-theme', theme),
   saveOpacity: (opacity) => ipcRenderer.invoke('save-opacity', opacity),
   saveMinimalMode: (mode) => ipcRenderer.invoke('save-minimal-mode', mode),
+  saveCarouselMode: (mode) => ipcRenderer.invoke('save-carousel-mode', mode),
   hide: () => ipcRenderer.send('widget-hide'),
   show: () => ipcRenderer.send('widget-show')
 })

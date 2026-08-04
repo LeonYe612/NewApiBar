@@ -43,18 +43,19 @@ function normalizeBase(raw) {
 }
 
 // ── HTTP GET ───────────────────────────────
-function apiGet(apiBase, endpoint, cookies, apiUser) {
+function apiGet(apiBase, endpoint, cookies, apiUser, token) {
   return new Promise((resolve, reject) => {
     const fullUrl = apiBase + endpoint
     const urlObj = new URL(fullUrl)
     const lib = urlObj.protocol === 'https:' ? https : http
-    debugLog(`GET ${fullUrl} hasCookies=${!!cookies} user=${apiUser || 'none'}`)
+    debugLog(`GET ${fullUrl} hasCookies=${!!cookies} user=${apiUser || 'none'} hasToken=${!!token}`)
     const headers = {
       'Accept': 'application/json',
       'User-Agent': 'Mozilla/5.0'
     }
     if (cookies) headers['Cookie'] = cookies
     if (apiUser) headers['New-Api-User'] = apiUser
+    if (token) headers['Authorization'] = 'Bearer ' + token
 
     const req = lib.request({
       hostname: urlObj.hostname,
@@ -146,18 +147,19 @@ async function login(apiBase, username, password) {
 
   const userData = result.data?.data || {}
   const apiUser = String(userData?.id || userData?.username || username)
+  const accessToken = userData?.access_token || null
 
-  if (result.cookies) {
-    debugLog(`LOGIN: user=${apiUser} hasCookies=${!!result.cookies}`)
-    return { ok: true, cookies: result.cookies, apiUser }
+  if (result.cookies || accessToken) {
+    debugLog(`LOGIN: user=${apiUser} hasCookies=${!!result.cookies} hasToken=${!!accessToken}`)
+    return { ok: true, cookies: result.cookies || '', apiUser, token: accessToken }
   }
 
   return { ok: false, error: '登录成功但未获取到认证凭据' }
 }
 
 // ── 翻页拉取全部日志 ──────────────────────────
-async function fetchAllLogPages(apiBase, basePath, cookies, user) {
-  const first = await apiGet(apiBase, basePath + '&page_size=100', cookies, user)
+async function fetchAllLogPages(apiBase, basePath, cookies, user, token) {
+  const first = await apiGet(apiBase, basePath + '&page_size=100', cookies, user, token)
   if (!first?.ok) return first
   const total = first.data?.data?.total || 0
   const allItems = [...(first.data?.data?.items || [])]
@@ -168,7 +170,7 @@ async function fetchAllLogPages(apiBase, basePath, cookies, user) {
     const promises = []
     // API 翻页：p=0 和 p=1 返回相同数据，从 p=2 开始才到第二页
     for (let p = 2; p <= totalPages; p++) {
-      promises.push(apiGet(apiBase, basePath + '&page_size=100&p=' + p, cookies, user))
+      promises.push(apiGet(apiBase, basePath + '&page_size=100&p=' + p, cookies, user, token))
     }
     const results = await Promise.all(promises)
     for (const r of results) {
@@ -186,14 +188,15 @@ async function fetchAllLogPages(apiBase, basePath, cookies, user) {
 async function fetchAllData(apiBase, auth) {
   const cookies = auth?.cookies || ''
   const user = auth?.apiUser || auth?.username || ''
+  const token = auth?.token || ''
 
   if (!cookies && !auth?.token) return { error: '未登录，请先输入域名和账号密码' }
   if (!apiBase) return { error: '未设置 API 地址，请在设置中输入域名' }
 
   const results = {}
   const errors = {}
-  try { results.userInfo = await apiGet(apiBase, '/api/user/self', cookies, user) } catch (e) { errors.userInfo = e.message }
-  try { results.tokens = await apiGet(apiBase, '/api/token/?p=0&page_size=50', cookies, user) } catch (e) { errors.tokens = e.message }
+  try { results.userInfo = await apiGet(apiBase, '/api/user/self', cookies, user, token) } catch (e) { errors.userInfo = e.message }
+  try { results.tokens = await apiGet(apiBase, '/api/token/?p=0&page_size=50', cookies, user, token) } catch (e) { errors.tokens = e.message }
 
   const now = new Date()
   const bjTime = new Date(now.getTime() + (8 * 3600 * 1000))
@@ -204,8 +207,8 @@ async function fetchAllData(apiBase, auth) {
   const bjTodayStart = (Date.UTC(y, m, d) / 1000) - (8 * 3600)
   const bjTodayEnd = bjTodayStart + 86399
   const logBase = `/api/log/self?start_timestamp=${bjTodayStart}&end_timestamp=${bjTodayEnd}`;
-  try { results.logs = await fetchAllLogPages(apiBase, logBase, cookies, user) } catch (e) { errors.logs = e.message }
-  try { results.apiStatus = await apiGet(apiBase, '/api/status', '', '') } catch (e) { errors.status = e.message }
+  try { results.logs = await fetchAllLogPages(apiBase, logBase, cookies, user, token) } catch (e) { errors.logs = e.message }
+  try { results.apiStatus = await apiGet(apiBase, '/api/status', '', '', '') } catch (e) { errors.status = e.message }
 
   if (results.userInfo?.status === 401 || results.logs?.status === 401) {
     debugLog('fetchAllData: 401 detected, cookie likely expired')
@@ -444,7 +447,7 @@ ipcMain.handle('do-login', async (_, { domain, username, password }) => {
     cfg.apiUser = result.apiUser || String(username)
     saveConfig(cfg)
     startAutoRefresh()
-    debugLog(`SAVED config: apiBase=${cfg.apiBase} hasCookies=${!!cfg.cookies} username=${cfg.username}`)
+    debugLog(`SAVED config: apiBase=${cfg.apiBase} hasCookies=${!!cfg.cookies} hasToken=${!!cfg.token} username=${cfg.username}`)
   }
   return result
 })

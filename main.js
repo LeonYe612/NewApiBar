@@ -48,7 +48,7 @@ function apiGet(apiBase, endpoint, cookies, apiUser, token) {
     const fullUrl = apiBase + endpoint
     const urlObj = new URL(fullUrl)
     const lib = urlObj.protocol === 'https:' ? https : http
-    debugLog(`GET ${fullUrl} hasCookies=${!!cookies} user=${apiUser || 'none'} hasToken=${!!token}`)
+    debugLog(`GET ${fullUrl} hasCookies=${!!cookies} user=${apiUser || 'none'} hasToken=${!!token} tokenLen=${(token || '').length}`)
     const headers = {
       'Accept': 'application/json',
       'User-Agent': 'Mozilla/5.0'
@@ -189,6 +189,7 @@ async function fetchAllData(apiBase, auth) {
   const cookies = auth?.cookies || ''
   const user = auth?.apiUser || auth?.username || ''
   const token = auth?.token || ''
+  debugLog(`fetchAllData: tokenLen=${(token||'').length}`)
 
   if (!cookies && !auth?.token) return { error: '未登录，请先输入域名和账号密码' }
   if (!apiBase) return { error: '未设置 API 地址，请在设置中输入域名' }
@@ -263,11 +264,13 @@ let carouselEnabled = true
 
 function buildTrayTooltip(result) {
   if (!result) return 'NewApiBar'
+  // 401 过期数据不更新 tooltip，保留上次有效值
+  if (result.expired) return 'NewApiBar（登录已过期）'
   const root = result.userInfo?.data?.data ?? result.userInfo?.data
   const quota = root?.quota
   if (quota == null) return 'NewApiBar'
   const balance = (quota / 500000).toFixed(2)
-  let tip = 'Balance: ¥' + balance
+  let tip = '余额: ¥' + balance
   if (result.logs?.ok) {
     const items = result.logs.data?.data?.items ?? []
     let totalQuota = 0
@@ -286,15 +289,17 @@ function buildTrayMenu(result) {
   summaryData = result
   tray.setToolTip(buildTrayTooltip(result))
 
-  // 采集当日消耗和剩余额度
-  if (result?.logs?.ok) {
+  // 采集当日消耗和剩余额度（仅非过期数据）
+  if (result?.logs?.ok && !result.expired) {
     const items = result.logs.data?.data?.items ?? []
     let totalQuota = 0
     for (const e of items) totalQuota += (e.quota || 0)
     trayDailyCost = totalQuota / 500000
   }
-  const root = result?.userInfo?.data?.data ?? result?.userInfo?.data
-  trayBalance = (root?.quota || 0) / 500000
+  if (!result.expired) {
+    const root = result?.userInfo?.data?.data ?? result?.userInfo?.data
+    trayBalance = (root?.quota || 0) / 500000
+  }
 
   if (carouselEnabled) {
     startTrayCarousel()
@@ -360,11 +365,12 @@ function showTrayPopup() {
   if (!tray) return
   const menuItems = [{ label: 'NewApiBar', enabled: false }]
 
-  if (summaryData) {
+  if (summaryData && !summaryData.expired) {
     const root = summaryData.userInfo?.data?.data ?? summaryData.userInfo?.data
     const quota = root?.quota
+    const balanceVal = quota != null ? (quota / 500000).toFixed(2) : '--'
     menuItems.push({ type: 'separator' })
-    menuItems.push({ label: '余额  ¥' + (quota / 500000).toFixed(2), enabled: false })
+    menuItems.push({ label: '余额  ¥' + balanceVal, enabled: false })
 
     if (summaryData.logs?.ok) {
       const items = summaryData.logs.data?.data?.items ?? []

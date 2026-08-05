@@ -212,7 +212,33 @@ async function fetchAllData(apiBase, auth) {
   try { results.apiStatus = await apiGet(apiBase, '/api/status', '', '', '') } catch (e) { errors.status = e.message }
 
   if (results.userInfo?.status === 401 || results.logs?.status === 401) {
-    debugLog('fetchAllData: 401 detected, cookie likely expired')
+    debugLog('fetchAllData: 401 detected, attempting auto re-login')
+    // 自动重登：用保存的凭据重新登录获取新 token
+    const cfg = loadConfig()
+    if (cfg.password && cfg.apiBase && cfg.username) {
+      const loginResult = await login(cfg.apiBase, cfg.username, cfg.password)
+      if (loginResult.ok && loginResult.token) {
+        cfg.token = loginResult.token
+        if (loginResult.cookies) cfg.cookies = loginResult.cookies
+        saveConfig(cfg)
+        debugLog('fetchAllData: auto re-login SUCCESS, token refreshed')
+        // 用新 token 重试一次
+        const newToken = loginResult.token
+        const newCookies = loginResult.cookies || cookies
+        try { results.userInfo = await apiGet(apiBase, '/api/user/self', newCookies, user, newToken) } catch (e) { errors.userInfo = e.message }
+        try { results.tokens = await apiGet(apiBase, '/api/token/?p=0&page_size=50', newCookies, user, newToken) } catch (e) { errors.tokens = e.message }
+        try { results.logs = await fetchAllLogPages(apiBase, logBase, newCookies, user, newToken) } catch (e) { errors.logs = e.message }
+        if (results.userInfo?.status !== 401) {
+          debugLog(`fetchAllData: retry hasUserInfo=${results.userInfo?.ok} hasLogs=${results.logs?.ok}`)
+          return { ok: true, ...results }
+        }
+        debugLog('fetchAllData: auto re-login retry still 401')
+      } else {
+        debugLog(`fetchAllData: auto re-login FAILED: ${loginResult.error}`)
+      }
+    } else {
+      debugLog('fetchAllData: no saved credentials for auto re-login')
+    }
     return { ok: true, ...results, error: '登录已过期，请重新登录', expired: true }
   }
 
@@ -451,6 +477,7 @@ ipcMain.handle('do-login', async (_, { domain, username, password }) => {
     if (result.token) cfg.token = result.token
     cfg.username = result.apiUser || username
     cfg.apiUser = result.apiUser || String(username)
+    if (password) cfg.password = password
     saveConfig(cfg)
     startAutoRefresh()
     debugLog(`SAVED config: apiBase=${cfg.apiBase} hasCookies=${!!cfg.cookies} hasToken=${!!cfg.token} username=${cfg.username}`)

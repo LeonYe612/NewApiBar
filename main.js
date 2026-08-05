@@ -142,7 +142,14 @@ function apiPost(apiBase, endpoint, bodyObj) {
 async function login(apiBase, username, password) {
   const result = await apiPost(apiBase, '/api/user/login', { username, password })
   if (!result.ok) {
-    return { ok: false, error: result.error || `登录失败 HTTP ${result.status}` }
+    return { ok: false, error: result.error || `登录失败 HTTP ${result.status}`, status: result.status }
+  }
+
+  // 检查业务逻辑错误（HTTP 200 但 success=false）
+  const bodyData = result.data
+  if (bodyData && bodyData.success === false) {
+    const msg = bodyData.message || '登录失败'
+    return { ok: false, error: msg, status: result.status }
   }
 
   const userData = result.data?.data || {}
@@ -155,6 +162,14 @@ async function login(apiBase, username, password) {
   }
 
   return { ok: false, error: '登录成功但未获取到认证凭据' }
+}
+
+// ── 登出（释放会话） ───────────────────────
+// 注意: api-proxy.ninthpalace.com 无 POST /api/user/logout 接口(返回404)
+// Session 只能靠服务端自然过期，客户端无法主动释放
+async function logoutSession(apiBase, cookies, token) {
+  debugLog('LOGOUT: skipped (server has no logout endpoint)')
+  return { status: 0, body: '{"skipped":true}' }
 }
 
 // ── 翻页拉取全部日志 ──────────────────────────
@@ -212,11 +227,36 @@ async function fetchAllData(apiBase, auth) {
   try { results.apiStatus = await apiGet(apiBase, '/api/status', '', '', '') } catch (e) { errors.status = e.message }
 
   if (results.userInfo?.status === 401 || results.logs?.status === 401) {
+    const now = Date.now()
+
+    // 冷却检查：距离上次重登太近则跳过，防止请求风暴
+    if (now < reLoginCooldown) {
+      debugLog(`fetchAllData: 401 detected but in cooldown, skipping re-login (${Math.round((reLoginCooldown - now) / 1000)}s remaining)`)
+      return { ok: true, ...results, error: '登录已过期（自动重登冷却中）', expired: true }
+    }
+
     debugLog('fetchAllData: 401 detected, attempting auto re-login')
     // 自动重登：用保存的凭据重新登录获取新 token
     const cfg = loadConfig()
     if (cfg.password && cfg.apiBase && cfg.username) {
-      const loginResult = await login(cfg.apiBase, cfg.username, cfg.password)
+      lastReLoginAttempt = now
+      let loginResult = await login(cfg.apiBase, cfg.username, cfg.password)
+
+      // 检查密码错误（HTTP 200 但 success=false）
+      if (loginResult.error && loginResult.error.includes('incorrect')) {
+        debugLog('fetchAllData: password incorrect, setting long cooldown')
+        reLoginCooldown = now + 30 * 60 * 1000 // 30分钟冷却
+        return { ok: true, ...results, error: '密码错误，请手动重新登录', expired: true }
+      }
+
+      // 409 AUTH_SESSION_LIMIT: 服务端会话数达上限，无法新登
+      // 服务端无 logout 接口，只能等待旧 session 自然过期
+      if (loginResult.status === 409) {
+        debugLog('fetchAllData: re-login got 409 session limit, entering long cooldown')
+        reLoginCooldown = now + 10 * 60 * 1000 // 10分钟冷却
+        return { ok: true, ...results, error: '登录会话数达上限，10分钟后自动重试', expired: true }
+      }
+
       if (loginResult.ok && loginResult.token) {
         cfg.token = loginResult.token
         if (loginResult.cookies) cfg.cookies = loginResult.cookies
@@ -284,9 +324,11 @@ function createWindow() {
 let summaryData = null
 let trayCarouselTimer = null
 let trayCarouselState = 0 // 0=当日消耗, 1=剩余额度
-let trayDailyCost = 0
-let trayBalance = 0
+let trayDailyCost = null   // null=从未获取到有效数据
+let trayBalance = null     // null=从未获取到有效数据
 let carouselEnabled = true
+let lastReLoginAttempt = 0   // 上次自动重登时间戳
+let reLoginCooldown = 0       // 重登冷却截止时间戳（毫秒）
 
 function buildTrayTooltip(result) {
   if (!result) return 'NewApiBar'
@@ -330,7 +372,8 @@ function buildTrayMenu(result) {
   if (carouselEnabled) {
     startTrayCarousel()
   } else {
-    renderTrayIcon('¥' + Math.max(0, Math.round(trayDailyCost)))
+    const cost = trayDailyCost != null ? Math.round(trayDailyCost) : null
+    renderTrayIcon(cost != null ? '¥' + Math.max(0, cost) : '¥-')
   }
 }
 
@@ -341,14 +384,14 @@ function startTrayCarousel() {
 
   function show() {
     const val = trayCarouselState === 0 ? trayDailyCost : trayBalance
-    renderTrayIcon('¥' + Math.max(0, Math.round(val)))
+    renderTrayIcon(val != null ? '¥' + Math.max(0, Math.round(val)) : '¥-')
   }
   show()
 
   trayCarouselTimer = setInterval(() => {
     trayCarouselState = trayCarouselState ? 0 : 1
     const val = trayCarouselState === 0 ? trayDailyCost : trayBalance
-    renderTrayIcon('¥' + Math.max(0, Math.round(val)))
+    renderTrayIcon(val != null ? '¥' + Math.max(0, Math.round(val)) : '¥-')
   }, 5000)
 }
 
@@ -470,6 +513,12 @@ ipcMain.handle('do-login', async (_, { domain, username, password }) => {
   if (!apiBase) return { ok: false, error: '请输入有效的 API 域名' }
 
   const result = await login(apiBase, username, password)
+
+  // 手动登录遇 409：会话数达上限
+  if (result.status === 409) {
+    return { ok: false, error: '登录会话数已达上限，请等待几分钟后重试', status: 409 }
+  }
+
   if (result.ok) {
     const cfg = loadConfig()
     cfg.apiBase = apiBase
@@ -523,6 +572,9 @@ ipcMain.handle('logout', async () => {
   delete cfg.token
   delete cfg.username
   delete cfg.apiUser
+  delete cfg.password
+  // 重置冷却状态，让重新登录可以立即尝试
+  reLoginCooldown = 0
   // 保留 apiBase，方便重新登录
   saveConfig(cfg)
   return { ok: true }
